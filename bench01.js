@@ -1,6 +1,6 @@
 // node  --experimental-modules bench01.js
 
-// how to import many classes from one file? 
+const { GSfc4q_Morton, GSfc4q_Hilbert } = require('./GSfc4q.js');
 
 var mrt, hlb;
 for (let l=0.5; l<3;  l=l+0.5) {
