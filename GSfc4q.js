@@ -25,10 +25,9 @@ const conf_alertLevel=1;  // for  debug
  * bkey2: the second bkey, used only when isHalf, in the
  *   "union of cells for building abstract structure from blind structure". See key_encode().
  *
- * (i,j) coordinates, or "matrix index" or "leaf-cell coordinates": see grid of the "blind structure".
- *   “i” and “j” are integers in the range [0,2^blevel-1]. 
- *   Usual matrix visualization conventios, with (0,0) on top left and (n,n) on buttom right.
- *   In other words, the "i+1" walks to the "next line", the "j+1" to the "next column".
+ * (i,j) coordinates, or "integer XY" or "leaf-cell coordinates": see grid of the "blind structure".
+ *   “i” and “j” are integers in the range [0,2^blevel-1]. IJ=(0,0) in the left-buttom corner.
+ *   “i” scan columns from left to right, “j” scan lines from bottom to up.
  *
  */
 class GSfc4q {
@@ -66,6 +65,7 @@ class GSfc4q {
   }
 
   /**
+NEED REVISION, perhaps better to use cache ... mutating (instead functional stateless)
    * Translates ID to (i,j) coordinates.
    * @param {integer} key - distance from origin in the curve.
    * @return {array} - the coordinates IJ in [IJ0,IJ1] with IJ1=null when not isHalf.
@@ -198,8 +198,8 @@ class GSfc4qLbl extends GSfc4q {
 
   /**
    * Set ID by key.
-   * @param {int} i - Line coordinate.
-   * @param {int} j - Column coordinate.
+   * @param {int} i - Integer X coordinate (scan columns from left to right).
+   * @param {int} j - Integer Y coordinate (scan lines from bottom to up).
    */
   setID_byIJ(i,j) {
      return this.setID_byKey( this.key_encode(i,j) )
@@ -214,6 +214,11 @@ class GSfc4qLbl extends GSfc4q {
    */
   id_toString(otherbase=null) {
      return this.sbiID.toString(otherbase||this.base)
+  }
+
+  key_toString(otherbase=null) {
+     //return this.sbiID.toString(otherbase||this.base)
+     return null; // under construction
   }
 
 }
