@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta charset="utf-8"/>
+   <meta name="viewport" content="width=1000">
+   <title>Sp-filling curves, compare 1</title>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./src/GSfc4q.js"></script>
+    <script src="./src/curves-grid.js"></script>
+
+<style>
+  body {
+    text-align: center;
+  }
+
+  table {
+    padding:10px;
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+  }
+
+  #chartsContainer svg.theChart  {
+    margin: 10px;
+  }
+  #chartsContainer svg.theChart rect.catchall {
+    cursor:pointer;
+    pointer-events: all;
+  }
+  #chartsContainer svg.theChart path {
+      fill: none;
+      stroke: #3A5894;
+      stroke-width: 0.25;
+      stroke-linecap: square;
+  }
+  #chartsContainer svg.theChart rect {
+    opacity:0.5;
+  }
+  #chartsContainer svg.theChart path.skeleton {
+      stroke: #DDD;
+      stroke-width: 0.1;
+  }
+  #chartsContainer div.theChartTooltip {
+      display: none;
+      position: absolute;
+      margin-top: 22px;
+      margin-left: -1px;
+      padding: 5px;
+      border-radius: 3px;
+      font: 16px sans-serif;
+      color: #eee;
+      background: rgba(0,0,140,0.9);
+      text-align: center;
+      pointer-events: none;
+  }
+  #chartsContainer div.theChartTooltip code,
+  #chartsContainer span.numCells {
+    font-weight: bold;
+  }
+  #chartsContainer div.theChartTooltip code:first-child {
+      font-size: 150%;
+  }
+</style>
+
+<script>
+'use strict';
+
+var globOrder_exact = 2; // change selected option. BUG: ignoring 0.5, 1.5, etc.
+var crvID0_showDecimal = false;
+var distinctColors = {}
+const conf_canvasWidth_min = 320;
+const conf_alertLevel = 1;
+
+var xzoomNode;
+//var xbaseNode;
+var mrtGrid,hlbGrid;
+var globOrder = Math.ceil(globOrder_exact);
+var globOrder_isHalf = (globOrder != globOrder_exact);
+
+function changeLblBase(base) {
+  // check is valid /std|dec|32/
+  let level = mrtGrid.sfc4.level
+  if (base=='32' && (level%2.5)) {
+    alert("Base32 can be used\nonly on levels 2.5, 5, 10, etc.")
+    return false;
+  }
+  mrtGrid.lblBase=base
+  hlbGrid.lblBase=base
+  changeOrder(level) //  refresh all
+  return true;
+}
+
+function toggleLabels(active) {
+  mrtGrid.layout.labelMain=active;
+  hlbGrid.layout.labelMain=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+
+function toggleCoords(active) {
+  mrtGrid.layout.labelIJ=active;
+  hlbGrid.layout.labelIJ=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+
+function changeOrder(v) {
+	globOrder_exact = v
+	globOrder = Math.ceil(v);
+	globOrder_isHalf = (globOrder!=v);
+
+	hlbGrid.refreshProperties(globOrder_exact)
+	mrtGrid.refreshProperties(globOrder_exact)
+	d3.select('#morton-chart span.numCells').text(mrtGrid.sfc4.nKeys)
+	d3.select('#hilbert-chart span.numCells').text(hlbGrid.sfc4.nKeys)
+
+	hlbGrid.build(false)
+	mrtGrid.build(false)
+  mrtGrid.buildCaption() // only one draw
+  }
+
+
+function redoOrderOptions(mode='all',max=15) {
+	let modeAll = (mode=='all');
+	let modeInt = (mode=='int');
+	let opts = [
+    ...Array( modeAll? max: Math.ceil(max/2) ).keys()
+  ].map(x => modeAll?
+      (0.5 + x/2):
+      ( modeInt? parseInt(1+x): (0.5+x) )
+  );
+	document.getElementById('xvalue').innerHTML = opts
+		.map(x => `<option${(x==globOrder_exact)? ' selected':''}>${x}</option>`)
+		.join()
+	;
+}
+
+function setFormOption(domId,val) {
+	var sel = document.getElementById(domId),
+	    opts = sel.options;
+	for (var i = 0; i < opts.length; i++)  if (opts[i].label == val)
+	      sel.selectedIndex = i;
+}
+
+function ONLOAD() {
+  // Inits, interface:
+  xzoomNode = document.getElementById('xzoom');
+  redoOrderOptions('all');
+  document.getElementById("form1").reset();// reset selected options of page history.
+  setFormOption('xvalue',globOrder_exact);
+  // Build grids:
+  let hlb = new GSfc4q_Hilbert(globOrder,'4h') // int level
+  hlbGrid = new GridOfCurve_D3('hilbert-chart', hlb);
+
+  let mrt = new GSfc4q_Morton(globOrder,'4h') // int level
+  mrtGrid = new GridOfCurve_D3('morton-chart', mrt);
+  mrtGrid.buildCaption() // only one draw
+} // \ONLOAD
+
+////////////
+</script>
+</head>
+
+<body onload="ONLOAD()">
+<form id="form1">
+<b>Level</b> <i>L</i> of <span style="color:red">grid</span> refinement = <a href="https://en.wikipedia.org/wiki/Space-filling_curve">Space-filling <span style="color:blue">curve</span></a>  <b>order</b>:
+	<select id="xvalue" onchange="changeOrder(this.value)"></select>
+  <select id="xopts" onchange="redoOrderOptions(this.value)">
+    <option value="all">all L</option>
+    <option value="int">L int</option>
+    <option value="half">half L</option>
+</select>
+&nbsp;&nbsp; Labels:
+<select
+  onchange="if (!changeLblBase(this.value)) this.selectedIndex=this.oldIndex" onFocus="this.oldIndex=this.selectedIndex"
+  >
+  <option value="std">Standard</option>
+  <option value="dec">Decimal</option>
+  <option value="32">base 32nvu</option>
+</select>
+
+<br/>&nbsp;<br/>
+
+<table id="chartsContainer" border="0" width="90%" align="center">
+	<tr>
+	 <td id="morton-chart" width="50%"><a href="https://en.wikipedia.org/wiki/Z-order_curve">MORTON CURVE</a>
+		in a grid of <span class="numCells"></span> cells<br/>
+		<svg class="theChart"></svg>
+		<div class="theChartTooltip"></div>
+	 </td>
+
+  <td id="rainbow" width="45"><svg></svg></td>
+
+	 <td id="hilbert-chart" width="50%"><a href="https://en.wikipedia.org/wiki/Hilbert_curve">HILBERT CURVE</a>
+		in a grid of <span class="numCells"></span> cells<br/>
+		<svg class="theChart"></svg>
+		<div class="theChartTooltip"></div>
+	 </td>
+	</tr>
+</table>
+
+<br/>
+<input type="checkbox" checked="1" onchange="toggleLabels(this.checked)" value="1" /> Show labels
+&nbsp;&nbsp;
+<input type="checkbox" checked="1" onchange="toggleCoords(this.checked)" value="1" /> Show coordinates (<i>i,j</i>)
+
+<br/>Zoom/pan:
+	<select id="xzoom">
+		<option value="1" selected>Enable
+		<option value="0">Disable<!--
+		<option value="-1">RESET and Enable
+		<option value="-2">RESET and Disable -->
+	</select>
+&nbsp; &nbsp; &nbsp;
+On mouse-over: hierarchical <a href="http://osm.codes/_foundations/art1.pdf" target="_blank">base4h, base16h and base 32-nvu described here</a>.
+
+</form>
+
+</body>
+</html>

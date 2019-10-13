@@ -5,8 +5,6 @@
  */
 
 
-const conf_alertLevel=1;  // for  debug
-
 /**
  * Generalized (G) Space-filling Curve (SFC) associated to a grid obtained by recursive 4-partitions of quadrilaterals.
  * The generalization consist in the inclusion of half levels.
@@ -21,7 +19,7 @@ const conf_alertLevel=1;  // for  debug
  * key: the index of a position in the SFC of level (abstract grid), sometimes sayd "distance from origin".
  *
  * bkey: "blind structure" key. Same as key, changing only when isHalf (blevel!=level).
- * 
+ *
  * bkey2: the second bkey, used only when isHalf, in the
  *   "union of cells for building abstract structure from blind structure". See key_encode().
  *
@@ -32,7 +30,7 @@ const conf_alertLevel=1;  // for  debug
  */
 class GSfc4q {
 
-  /** 
+  /**
    * @constructor
    * @param {float} level - hierarchical level of aperture-4 hierarchical grid. Valid integer and "half levels".
    */
@@ -43,13 +41,12 @@ class GSfc4q {
     this.halfIsOptimized = false  // for adaptated Morton and others, default value, need overhide
   }
 
-  /** 
+  /**
    * Refresh inicializations, mutating all propertis if necessary. Used by constructor.
    * @param {float} level - null (no mutation) or hierarchical level of aperture-4 hierarchical grid. Valid integer and "half levels".
    */
-  refresh(level) { 
+  refresh(level) {
     this.level  = level || this.level || 1
-
     // PROPRIETIES:
     this.blevel = Math.round(this.level)       // use this level for internal calculus
     this.isHalf = (this.blevel != this.level)  // or !(this.level % 0.5)
@@ -58,24 +55,23 @@ class GSfc4q {
     this.nKeys  =  this.nBKeys   = 4n**BigInt(this.blevel)       // number of cells in the grid
     this.keyBits = this.bkeyBits = (this.nKeys - 1n).toString(2).length
     if (this.isHalf) {
-      this.nKeys = this.nBKeys/2n  // number of cells in the "blind grid"
+      this.nKeys = this.nBKeys/2n  // number of cells at half level
       this.keyBits--
     }
     this.nRefRows = 2n**BigInt(this.blevel) // sqrt(nBKeys), reference for number of B-Rows (or cells per column in an uniform reference grid).
   }
 
   /**
-NEED REVISION, perhaps better to use cache ... mutating (instead functional stateless)
-   * Translates ID to (i,j) coordinates.
-   * @param {integer} key - distance from origin in the curve.
+   * Translates key to (i,j) coordinates.
+   * @param {integer} key - distance from origin in the curve at level.
    * @return {array} - the coordinates IJ in [IJ0,IJ1] with IJ1=null when not isHalf.
    */
   key_decode(key) {
       if (typeof key != 'bigint') key = BigInt(key)
       if (this.isHalf) {
-	let bkey = 2n*key
-        let key0 = this.bkey_decode(bkey)
-	return [ key0, this.bkey_decode(bkey+1n) ]
+	let bkey = 2n*key  // blevel
+        let ij0 = this.bkey_decode(bkey)
+	return [ ij0, this.bkey_decode(bkey+1n) ]
       } else
         return [ this.bkey_decode(key), null ]
   }
@@ -84,25 +80,25 @@ NEED REVISION, perhaps better to use cache ... mutating (instead functional stat
   /**
    * Translates to bkey the (i,j) coordinates of blevel in the "blind grid".
    * Remember that blevel=level, changing only when isHalf (level+0.5).
-   * When isHalf the second bkey is at this.bkey2.
-   * @param {integer} i - the row coordinate.
-   * @param {integer} j - the column coordinate.
-   * @return {integer} - mutate bkey1 and bkey2
+   * When isHalf the bkey2 is not null.
+   * @param {integer} i - the roundX coordinate.
+   * @param {integer} j - the roundY coordinate.
+   * @return {array} - of BigInts, bkey1 and null or bkey1 and bkey2.
    */
   key_encode(i,j) {
     if (this.isHalf) {
-      let bkey  = this.bkey_encode(i,j); // bkey at blevel
-      let key   = bkey>>1; // key at level
-      this.bkey = key<<1;  // normalized bkey1
-      this.bkey2 = this.bkey0+1; // normalized bkey2.
-      return this.bkey
+      let bkey1  = this.bkey_encode(i,j); // bkey at blevel
+      let key   = bkey1>>1n; //  level
+      bkey1 = key<<1n;  // normalized bkey1
+      let bkey2 = bkey1+1n
+      return [bkey1, bkey2]
     } else
-      return this.bkey_encode(i,j);
+      return [this.bkey_encode(i,j),null];
   }
 
 
   // // // // to be overhide  // // //
- 
+
 
   /**
    * Concrete method. Same as key_decode() method, but for integer levels only.
@@ -122,7 +118,7 @@ NEED REVISION, perhaps better to use cache ... mutating (instead functional stat
   // used only on (needSwap) rotated geometries of rectangular cells
   key_swapSides(key,xref,yref) { return [xref,yref] } // to get cell sizes by ID
   ij_swapSides(i,j,xref,yref) { return [xref,yref] } // to get cell sizes by (i,j)
-  ij_nSwaps(i,j) { return [0n,0n] } // to get XY grid position, number of X-rotations and Y-rotations. 
+  ij_nSwaps(i,j) { return [0n,0n] } // to get XY grid position, number of X-rotations and Y-rotations.
 
 } // \GSfc4qLbl
 
@@ -135,7 +131,7 @@ NEED REVISION, perhaps better to use cache ... mutating (instead functional stat
  */
 class GSfc4qLbl extends GSfc4q {
 
-  /** 
+  /**
    * @constructor
    * @param {float} level - hierarchical level of aperture-4 hierarchical grid. Valid integer and "half levels".
    * @param {string} base - the abbreviation of name of standard base (2, 4js, 4h, 16h, 32ghs, etc.)
@@ -154,14 +150,14 @@ class GSfc4qLbl extends GSfc4q {
     id0_maxBits = id0_maxBits || this.id0_maxBits || null
     if (id0!==undefined && id0!==null && BigInt(id0)!=this.id0) {
         let id0_tmp = SizedBigInt(id0,null,null,id0_maxBits)
-	this.id0 = id0_tmp.val  // a BigInt
+        this.id0 = id0_tmp.val  // a BigInt
         this.id0_maxBits = id0_maxBits? id0_maxBits: id0_tmp.bits
         this.sbiID.fromNull()  // remove old value
     }
     if (this.id0_maxBits == undefined) this.id0_maxBits = null
     if (base && base!=this.base) {
         this.base = base
-	SizedBigInt.kx_trConfig(this.base) // for exotic bases
+        SizedBigInt.kx_trConfig(this.base) // for exotic bases
     }
   }
 
@@ -172,6 +168,24 @@ class GSfc4qLbl extends GSfc4q {
   setId(id) {
      let IDbits = this.keyBits + (this.id0_maxBits?this.id0_maxBits:0)
      this.sbiID.fromInt(id,IDbits)
+     return this
+  }
+
+  /**
+   * Set by key.
+   * @param {bigint} key.
+   */
+  setKey(key) {
+     this.sbiID.fromInt(key,this.keyBits)
+     return this
+  }
+
+  /**
+   * Set by bkey.
+   * @param {bigint} bkey.
+   */
+  setBkey(bkey) {
+     this.sbiID.fromInt(bkey,this.bkeyBits)
      return this
   }
 
@@ -197,17 +211,22 @@ class GSfc4qLbl extends GSfc4q {
   }
 
   /**
-   * Set ID by key.
-   * @param {int} i - Integer X coordinate (scan columns from left to right).
+   * Set ID by (i,j) or array IJ. Numbers, not BigInt's.
+   * @param {int} i - array or Integer X coordinate (scan columns from left to right).
    * @param {int} j - Integer Y coordinate (scan lines from bottom to up).
    */
-  setID_byIJ(i,j) {
-     return this.setID_byKey( this.key_encode(i,j) )
+  setBkey_byIJ(i,j) {
+    if (typeof i == 'object') [i,j]=i;
+    let max = Number(this.nRefRows)-1
+    if (i>max || j>max) return this; // reliable but hidding bugs
+    let bkey = this.key_encode(i,j)[0];
+    return this.setKey( this.isHalf? bkey/2n: bkey )
   }
 
   /**
    * Labelling. Assignment of human-readle and hierarchical label for a cell of the grid.
-   * Provides a standard base-encoded (String) representation of the (BigInt) cell identifier (ID). 
+CHECK BUG: not returning correct number of bits  (start-padding zeros)
+   * Provides a standard base-encoded (String) representation of the (BigInt) cell identifier (ID).
    * The ID is obtained by setID chaining methods.
    * @param {string} otherbase - none (standard) or other base.
    * @return {string} - the human-readable ID.
@@ -224,11 +243,11 @@ class GSfc4qLbl extends GSfc4q {
 }
 
 
-// // // // // //  Concrete curve implementations as specializations:  // // // // //  
+// // // // // //  Concrete curve implementations as specializations:  // // // // //
 
 
 /**
- * Morton curve for 32 bits, waiting better for 64bits. 
+ * Morton curve for 32 bits, waiting better for 64bits.
  * 64 bits REFERENCES:
  *  https://github.com/yinqiwen/geohash-int/blob/master/geohash.c
  *  https://github.com/mmcloughlin/geohash/blob/master/geohash.go
@@ -241,13 +260,15 @@ class GSfc4qLbl extends GSfc4q {
  */
 class GSfc4q_Morton extends GSfc4qLbl {
 
-  constructor(level,base) {
-    super(level,base)
+  constructor(level,base,id0,id0_maxBits) {
+    super(level,base,id0,id0_maxBits)
+    this.curveName='Morton'
     //default this.needSwap = false
     //default this.halfIsOptimized = false // can be true!
   }
 
   bkey_encode(x, y) { // for 32 bits positive integers
+    if (typeof x == 'number') {x=BigInt(x); y=BigInt(y);}
     var B = [BigInt(0x55555555), BigInt(0x33333333), BigInt(0x0F0F0F0F), BigInt(0x00FF00FF)];
     var S = [1n, 2n, 4n, 8n];
     x = (x | (x << S[3])) & B[3];
@@ -264,8 +285,8 @@ class GSfc4q_Morton extends GSfc4qLbl {
   bkey_decode(d) {
     if (typeof d !='bigint') d = BigInt(d)
     return [
-      GSfc4q_Morton.deinterleave(d),
-      GSfc4q_Morton.deinterleave(d >> 1n)
+      Number(GSfc4q_Morton.deinterleave(d)),
+      Number(GSfc4q_Morton.deinterleave(d >> 1n))
     ];
   } // \key_decode
 
@@ -286,8 +307,9 @@ class GSfc4q_Morton extends GSfc4qLbl {
  */
 class GSfc4q_Hilbert extends GSfc4qLbl { // Hilbert Curve.
 
-  constructor(level,base) {
-    super(level,base)
+  constructor(level,base,id0,id0_maxBits) {
+    super(level,base,id0,id0_maxBits)
+    this.curveName='Hilbert'
     this.needSwap = true // need to implement ij_swapSides(), etc.
     this.halfIsOptimized = false
     if (conf_alertLevel>1) console.log("warning: Hilbert needSwap not implemented.")
@@ -298,6 +320,7 @@ class GSfc4q_Hilbert extends GSfc4qLbl { // Hilbert Curve.
   }
 
   bkey_encode(i,j) {
+    if (typeof i == 'number') {i=BigInt(i); j=BigInt(j);}
     return GSfc4q_Hilbert._bkey_encode(i, j, this.nRefRows)
   }
 
@@ -313,7 +336,7 @@ class GSfc4q_Hilbert extends GSfc4qLbl { // Hilbert Curve.
     ij.push(ij.shift()); //Swap i and j
     }
   }
-  static _bkey_decode(key, nRefRows) {
+  static _bkey_decode(key, nRefRows) {  // max 64 bits key, to return 32 bits pair.
     if (typeof key !='bigint') key = BigInt(key)
     let rx, ry, t = key,
         ij = [0n, 0n];
@@ -325,15 +348,15 @@ class GSfc4q_Hilbert extends GSfc4qLbl { // Hilbert Curve.
         ij[1] += (s * ry);
         t /= 4n;
     }
-    return ij;
+    return [Number(ij[0]),Number(ij[1])]; // 32 bits integers
   }
-  static _bkey_encode(i, j, nRefRows) {
+  static _bkey_encode(i, j, nRefRows) { // input and return BigInt
     let rx, ry, key = 0n,
         ij = [i, j];
     for (let s = nRefRows / 2n; s >= 1n; s /= 2n) {
-        rx = (ij[0] & s) > 0n;
-        ry = (ij[1] & s) > 0n;
-        key += s*s * ((3n * rx) ^ ry);
+        rx = (ij[0] & s) > 0n ? 1n: 0n;
+        ry = (ij[1] & s) > 0n ? 1n: 0n;
+        key = key + s*s * ((3n * rx) ^ ry);
         GSfc4q_Hilbert._rot(s, ij, rx, ry);
     }
     return key;
@@ -352,7 +375,6 @@ class GSfc4q_Hilbert extends GSfc4qLbl { // Hilbert Curve.
  *  and foundations at http://osm.codes/_foundations/art1.pdf
  */
 class SizedBigInt {
-
 
   /**  @constructor */
   constructor(val,radix,bits,maxBits=null) {
@@ -465,10 +487,10 @@ class SizedBigInt {
     if (radix===undefined)
       return `[${this.bits},${this.val}]`; // Overrides Javascript toString()
     let rTo = SizedBigInt.baseLabel(radix,false)
-    if (this.val===null || (!rTo.isHierar && this.bits % rTo.bitsPerDigit != 0))
+    if (this.val===null)// || (!rTo.isHierar && this.bits % rTo.bitsPerDigit != 0))
       return ''
     let b = this.toBitString()
-    if (rTo.base==2)
+    if (rTo.base==2)  // || rTo.base=='2h'
       return b
     let trLabel = '2-to-'+rTo.label
     if (!SizedBigInt.kx_tr[trLabel]) SizedBigInt.kx_trConfig(rTo.label);
@@ -675,7 +697,7 @@ class SizedBigInt {
 
 // // // // // //
 
-module.exports = { GSfc4q_Morton, GSfc4q_Hilbert }
+//module.exports = { GSfc4q_Morton, GSfc4q_Hilbert }
 
 
 
@@ -696,4 +718,3 @@ module.exports = { GSfc4q_Morton, GSfc4q_Hilbert }
  limitations under the License.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - */
-
