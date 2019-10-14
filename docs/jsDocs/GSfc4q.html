@@ -30,16 +30,17 @@
     
         <h2><span class="attribs"><span class="type-signature"></span></span>GSfc4q<span class="signature">(level)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Generalized (G) Space-filling Curve (SFC) associated to a grid obtained by recursive 4-partitions of quadrilaterals.
-The generalization consist in the inclusion of half levels.</p>
+            <div class="class-description"><p>Generalized (G) <a href="https://en.wikipedia.org/wiki/Space-filling_curve">Space-filling Curve</a> (SFC) associated to a grid obtained by recursive 4-partitions of quadrilaterals.
+The generalization consist in the inclusion of &quot;half levels&quot;,  introduced by <a href="http://osm.codes/_foundations/art3.pdf">this article</a>.</p>
 <p>Concepts:</p>
-<p><strong>level</strong>: the curve's hierarchical level. &quot;public level&quot;, that can be half (0.5, 1, 1.5, 2, 2.5 etc.)</p>
-<p><strong>blevel</strong>: &quot;blind structure&quot; integer level, concrete level adopted on internal calculations.
-The basic relation is <em>blevel=ceil(level)</em>, and <em>isHalf</em> flags when <em>blevel</em> is not equal to <em>level</em>. See  all foundations at http://osm.codes/_foundations/art3.pdf</p>
+<p><strong>level</strong>: the curve's hierarchical level of the public (abstract) structure. Also named &quot;public level&quot;, that can be half (0.5, 1, 1.5, 2, 2.5 etc.).</p>
+<p><strong>blevel</strong>: &quot;blind structure&quot; integer level, the concrete level adopted on internal calculations.
+The basic relation is <em>blevel=ceil(level)</em>, with a flag <em>isHalf</em> when <em>blevel</em> is not equal to <em>level</em>.</p>
 <p><strong>key</strong>: the index of a position in the SFC of public level (abstract grid), sometimes sayd &quot;distance from origin&quot;. The geometric representation of key is a cell in the regular grid. When <em>isHalf</em> the cell of <em>level</em> is the union of two cells of <em>blevel</em>. Sometimes, when <em>isHalf</em> (see Hilbert curve case), the abstract grid obtained by this union of adjacent cells is a non-regular &quot;degenerated grid&quot;.</p>
-<p><strong>bkey</strong>: &quot;blind structure&quot; key. Same as key, changing only when <em>isHalf</em>. key​ = floor (​bkey / 2)*</p>
+<p><strong>bkey</strong>: &quot;blind structure&quot; key. Same as key, changing only when <em>isHalf</em>, them <em>key​ = floor (​bkey / 2)</em>.</p>
 <p><strong>bkey2</strong>: the second bkey, used only when isHalf, in the
 &quot;union of cells for building abstract structure from blind structure&quot;. See key_encode().</p>
+<p><strong>grid</strong> of the <strong>unit square</strong>: the mathematical entity used as total area filled by the SFC, is the unit square. It can be transformed into any other quadrilateral, it is a reference canvas geometry. Partitions over unit square produces the grid of <em>blevel</em>. The SFC forms a path conecting centers of the cells of the grid.  The set of all <em>blevel</em> grids can be named &quot;hierarchical grid&quot;, but sometimes is simply designed as &quot;grid&quot;. Grids of <em>isHalf</em> levels are named &quot;degenerated grids&quot;. The unit square with no partition is the primordial cell, a grid of level zero.</p>
 <p><strong>(i,j)</strong> coordinates, or &quot;integer <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Positions#The_grid">XY grid</a>&quot;: see grid of the &quot;blind structure&quot;. <img src="../assets/svg_coordinates.png" alt="">
 <br/>“i” and “j” are integers in the range [0,2^blevel-1]. IJ=(0,0) in the top-left corner.
 <br/>“i” scan columns from left to right, “j” scan lines from top to bottom.</p></div>
@@ -154,7 +155,7 @@ The basic relation is <em>blevel=ceil(level)</em>, and <em>isHalf</em> flags whe
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line37">line 37</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line39">line 39</a>
     </li></ul></dd>
     
 
@@ -311,7 +312,7 @@ The basic relation is <em>blevel=ceil(level)</em>, and <em>isHalf</em> flags whe
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line105">line 105</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line107">line 107</a>
     </li></ul></dd>
     
 
@@ -495,7 +496,7 @@ The basic relation is <em>blevel=ceil(level)</em>, and <em>isHalf</em> flags whe
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line113">line 113</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line115">line 115</a>
     </li></ul></dd>
     
 
@@ -642,7 +643,7 @@ The basic relation is <em>blevel=ceil(level)</em>, and <em>isHalf</em> flags whe
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line69">line 69</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line71">line 71</a>
     </li></ul></dd>
     
 
@@ -827,7 +828,7 @@ and supposing union of cells when <em>isHalf</em>, returning 2 cells instead one
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line86">line 86</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line88">line 88</a>
     </li></ul></dd>
     
 
@@ -988,7 +989,7 @@ and supposing union of cells when <em>isHalf</em>, returning 2 cells instead one
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line48">line 48</a>
+        <a href="GSfc4q.js.html">GSfc4q.js</a>, <a href="GSfc4q.js.html#line50">line 50</a>
     </li></ul></dd>
     
 
@@ -1034,13 +1035,13 @@ and supposing union of cells when <em>isHalf</em>, returning 2 cells instead one
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="GSfc4q.html">GSfc4q</a></li><li><a href="GSfc4qLbl.html">GSfc4qLbl</a></li><li><a href="GSfc4qLbl_Hilbert.html">GSfc4qLbl_Hilbert</a></li><li><a href="GSfc4qLbl_Morton.html">GSfc4qLbl_Morton</a></li><li><a href="SizedBigInt.html">SizedBigInt</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="GridOfCurve.html">GridOfCurve</a></li><li><a href="GridOfCurve_D3.html">GridOfCurve_D3</a></li><li><a href="GSfc4q.html">GSfc4q</a></li><li><a href="GSfc4qLbl.html">GSfc4qLbl</a></li><li><a href="GSfc4qLbl_Hilbert.html">GSfc4qLbl_Hilbert</a></li><li><a href="GSfc4qLbl_Morton.html">GSfc4qLbl_Morton</a></li><li><a href="SizedBigInt.html">SizedBigInt</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Oct 13 2019 21:29:50 GMT-0300 (GMT-03:00)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Oct 14 2019 06:35:55 GMT-0300 (GMT-03:00)
 </footer>
 
 <script> prettyPrint(); </script>

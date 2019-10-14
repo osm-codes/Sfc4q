@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: GridOfCurve</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: GridOfCurve</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>GridOfCurve<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>Grid of a <a href="https://en.wikipedia.org/wiki/Space-filling_curve">Space-Filling Curve</a> (SFC) of recursive
+4-partitions of quadrilaterals. This class implements geometry and operations to handle grids.
+It is used as complement of the Sfc4q class.</p>
+<p>Concepts:</p>
+<p><strong>grid</strong> of the <strong>unit square</strong> (canvas box): the mathematical entity used as total area filled by the SFC, is the unit square. It can be transformed into any other quadrilateral, it is a reference <strong>canvas geometry</strong>. Partitions over unit square produces the grid of <em>blevel</em>. The SFC forms a path conecting centers of the cells of the grid, and SFC distance is used as index to identify the cells of the grid. The set of all <em>blevel</em> grids can be named &quot;hierarchical grid&quot;, but sometimes we abbreviate to &quot;grid&quot;. Grids of <em>isHalf</em> levels are named &quot;degenerated grids&quot;. The unit square with no partition is the primordial cell, a grid of level zero.</p>
+<p><strong>box width</strong> and <strong>box height</strong>: the  unit square is projected to a real &quot;box&quot;, used as canvas of the grid.</p>
+<p><strong>sfc4</strong>: any SFC object used as reference for <em>level</em>, <em>blevel</em>, <em>key</em>, <em>bkey</em>, <em>id0</em>, <em>id</em> and its labels and operations, mainly decode/encode to IJ coordinates. Typical objects are instances of the <em>GSfc4qLbl</em> class extensions to concrete curves, like <em>GSfc4qLbl_Morton</em> or <em>GSfc4qLbl_Hilbert</em> classes.</p>
+<p><strong>(i,j)</strong> coordinates, or &quot;integer <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Positions#The_grid">XY grid</a>&quot;: see grid of the &quot;blind structure&quot;. <img src="../assets/svg_coordinates.png" alt="">
+<br/>“i” and “j” are integers in the range [0,2^blevel-1]. IJ=(0,0) in the top-left corner.
+<br/>“i” scan columns from left to right, “j” scan lines from top to bottom.</p>
+<p>Concepts implemented by the Sfc4q class: <em>level</em>, <em>blevel</em>, <em>key</em>, <em>bkey</em>, <em>IJ</em> coordinates, (i,j).</p></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="GridOfCurve"><span class="type-signature"></span>new GridOfCurve<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="curves-grid.js.html">curves-grid.js</a>, <a href="curves-grid.js.html#line30">line 30</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="ij_to_xy"><span class="type-signature"></span>ij_to_xy<span class="signature">(integer, integer)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Translates (i,j) coordinates to (x,y) coordinates, using grid properties.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>integer</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>i: the grid row coordinate.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>integer</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>j: the grid column coordinate.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="curves-grid.js.html">curves-grid.js</a>, <a href="curves-grid.js.html#line65">line 65</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>[float,float].</p>
+</div>
+
+
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="xy_to_ij"><span class="type-signature"></span>xy_to_ij<span class="signature">(float, float)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Translates (x,y) coordinates to (i,j) coordinates, using grid properties.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>float</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>x: the spatial X coordinate.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>float</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>y: the spatial Y coordinate.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="curves-grid.js.html">curves-grid.js</a>, <a href="curves-grid.js.html#line84">line 84</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>[integer,integer].</p>
+</div>
+
+
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="GridOfCurve.html">GridOfCurve</a></li><li><a href="GridOfCurve_D3.html">GridOfCurve_D3</a></li><li><a href="GSfc4q.html">GSfc4q</a></li><li><a href="GSfc4qLbl.html">GSfc4qLbl</a></li><li><a href="GSfc4qLbl_Hilbert.html">GSfc4qLbl_Hilbert</a></li><li><a href="GSfc4qLbl_Morton.html">GSfc4qLbl_Morton</a></li><li><a href="SizedBigInt.html">SizedBigInt</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Oct 14 2019 06:35:55 GMT-0300 (GMT-03:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
