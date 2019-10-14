@@ -148,10 +148,10 @@ function ONLOAD() {
   document.getElementById("form1").reset();// reset selected options of page history.
   setFormOption('xvalue',globOrder_exact);
   // Build grids:
-  let hlb = new GSfc4q_Hilbert(globOrder,'4h') // int level
+  let hlb = new GSfc4qLbl_Hilbert(globOrder,'4h') // int level
   hlbGrid = new GridOfCurve_D3('hilbert-chart', hlb);
 
-  let mrt = new GSfc4q_Morton(globOrder,'4h') // int level
+  let mrt = new GSfc4qLbl_Morton(globOrder,'4h') // int level
   mrtGrid = new GridOfCurve_D3('morton-chart', mrt);
   mrtGrid.buildCaption() // only one draw
 } // \ONLOAD

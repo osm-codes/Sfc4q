@@ -12,7 +12,7 @@ The step-by-step development:
 
 PS: building first steps with [blockbuilder.org](http://blockbuilder.org).
 
+## Docs
+See
 
-
-
-
+To update use, at `Sfc4q` forlder, the terminal command `jsdoc src/*.js -c docs/assets/jsdoc.conf.json  -d docs/jsDocs`
