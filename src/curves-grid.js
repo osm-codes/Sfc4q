@@ -116,6 +116,7 @@ class GridOfCurve_D3 extends GridOfCurve {
     this.lblBase='std'
     this.lblChk = null
     this.D3canvas = null
+    this.MIN_RECT_SIZE = 15
     if (toBuildHere) this.build(true)
     if (toBuildToolTip) this.tooltip_build() // conferir se precisa rebuild das propriedades do data
     this.build_zoomTool() // need if
@@ -211,7 +212,7 @@ class GridOfCurve_D3 extends GridOfCurve {
       let idPub = lblIsDec? id: lblIs32? id32: lblIs16? id16: id4;
       if (!stopOn && useDstClrs && (nBKeys<150 || (id%nBKeysFrac)==1) )
         this.distinctColors[colorCode] = idPub;
-      r[id] = { id:id, idPub:idPub, i:ij0[0], j:ij0[1], x:xy[0], y:xy[1], width:rw, height:rh, color:colorCode };
+      r[id] = { id:id, idPub:idPub, id16:id16, i:ij0[0], j:ij0[1], x:xy[0], y:xy[1], width:rw, height:rh, color:colorCode };
     }
     return r;
   }
@@ -229,9 +230,10 @@ class GridOfCurve_D3 extends GridOfCurve {
       .data( this.dataBuild() )
       .enter()
 
-    if (this.layout.rects && rw>15) // // // Red rectangular grid:
+    if (this.layout.rects && rw>this.MIN_RECT_SIZE) // // // Red rectangular grid:
       D3DataEnter.append("rect")
       .attr("x", d => d.x ).attr("y", d => d.y )
+      .attr("class",d=>`x${d.id16}`)
       .attr("width",d => d.width).attr("height",d => {return d.height})
       .style("fill","#FFF").style("stroke","#F00");
 
@@ -320,15 +322,16 @@ class GridOfCurve_D3 extends GridOfCurve {
               '':    `base 16h: ${adTag(id16)}`;
     let dec = lck[0]?  '':  `decimal: ${adTag(id)}${hex? '<br/>':''}`;
     let b4  = (idPub!=id4)? `<br/>base4h: ${adTag(id4)}`: '';
-    return `${lck[3]}: ${adTag(idPub)}<hr/> ${dec}${hex}${b4}<br/>(<i>i,j</i>)=(${ij[0]},${ij[1]})`;
+    return [id16, `${lck[3]}: ${adTag(idPub)}<hr/> ${dec}${hex}${b4}<br/>(<i>i,j</i>)=(${ij[0]},${ij[1]})`];
   }
 
   tooltip_build() {
   	const domRef = d3.select('#'+ this.domRef_id);
   	const tpNode = domRef.select('div.theChartTooltip');
-  	var mySVG   = this.D3_svg;
-  	var myThis  = this;
-    var mySfc = this.sfc4  //const
+  	const mySVG   = this.D3_svg;
+  	const myThis  = this;
+    const drawRect = (this.layout.rects && this.cell_refWidth > this.MIN_RECT_SIZE)
+    const mySfc = this.sfc4  //const
     var lastCellPos = [null,null];
   	this.D3canvas  // BUG on catchall!
     	.on('mouseover', function() {
@@ -336,15 +339,9 @@ class GridOfCurve_D3 extends GridOfCurve {
     	})
     	.on('mouseout', function() {
         tpNode.style("display", "none");
-        // must to draw and drop rectangle, not reuse background.
-        /* revisar class xy, melhor usar Key como seletor, k123, visto que é seletor local
-        if (lastCellPos[0]!==null) {
-      		mySVG.select(`rect.xy${lastCellPos[0]}-${lastCellPos[1]}`).style("fill", '#FFF');
-      		if (this.sfc4.isHalf) //NAO PRECISA MAIS pois é key
-      			mySVG.select(`rect.xy${lastCellPos[3]}-${lastCellPos[4]}`).style("fill", '#FFF'); // lastCellPos[2]
-      	}
-        */
-      	lastCellPos = [null,null];
+        if (lastCellPos[2]!==null)
+          myThis.D3_svg0.select(`rect.x${lastCellPos[2]}`).style("fill","#FFF")
+      	lastCellPos = [null,null,null];
   	})
     .on('mousemove', function () {
       // falta pintar um retangulo
@@ -353,7 +350,13 @@ class GridOfCurve_D3 extends GridOfCurve {
       if (lastCellPos[0]!=grd_IJ[0] || lastCellPos[1]!=grd_IJ[1]) { // only to reduce CPU costs
         mySfc.setBkey_byIJ(grd_IJ)
         let msg = myThis.tooltip_msg(grd_IJ)
-        tpNode.html(msg)
+        tpNode.html(msg[1])
+        if (drawRect) {
+          grd_IJ.push(msg[0])
+          if (lastCellPos[2]!==null)
+            myThis.D3_svg0.select(`rect.x${lastCellPos[2]}`).style("fill","#FFF")
+          myThis.D3_svg0.select(`rect.x${msg[0]}`).style("fill","#A55")
+        }
         lastCellPos = grd_IJ
       }
       tpNode.style('left', d3.event.pageX+'px')

@@ -6,7 +6,7 @@
 
 Therefore, we are interested in any SFC that is valid for indexing hierarchical grid of refinement-ratio-4 quadrilateral cells, abbreviated **SFC-4q**, or *Sfc4q* as adopted in the project's name and classes names.
 
-In this project we are also interested in [geocodes](https://en.wikipedia.org/wiki/Geocode) obtained by labeling the SFC indexes,  expressing it in human-readable **hierarchical codes**. The hierarchy of the code is illustrated above as the commom prefix (e.g. `2` in `20` and `23`) that emerges in uith the base4 representation.
+In this project we are also interested in [geocodes](https://en.wikipedia.org/wiki/Geocode) obtained by labeling the SFC indexes,  expressing it in human-readable **hierarchical codes**. The hierarchy of the code is illustrated above as the commom prefix (e.g. `2` in `20` and `23`) that emerges in with the base4 representation.
 
 ## Framework organization
 
