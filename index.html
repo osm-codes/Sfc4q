@@ -101,34 +101,6 @@ function changeLblBase(base) {
   return true;
 }
 
-function toggleLabels(active) {
-  mrtGrid.layout.labelMain=active;
-  hlbGrid.layout.labelMain=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-
-function toggleCoords(active) {
-  mrtGrid.layout.labelIJ=active;
-  hlbGrid.layout.labelIJ=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-
-function changeOrder(v) {
-	globOrder_exact = v
-	globOrder = Math.ceil(v);
-	globOrder_isHalf = (globOrder!=v);
-
-	hlbGrid.refreshProperties(globOrder_exact)
-	mrtGrid.refreshProperties(globOrder_exact)
-	d3.select('#morton-chart span.numCells').text(mrtGrid.sfc4.nKeys)
-	d3.select('#hilbert-chart span.numCells').text(hlbGrid.sfc4.nKeys)
-
-	hlbGrid.build(false)
-	mrtGrid.build(false)
-  mrtGrid.buildCaption() // only one draw
-  }
-
-
 function redoOrderOptions(mode='all',max=15) {
 	let modeAll = (mode=='all');
 	let modeInt = (mode=='int');
@@ -151,6 +123,48 @@ function setFormOption(domId,val) {
 	      sel.selectedIndex = i;
 }
 
+//////
+function changeOrder(v) {
+	globOrder_exact = v
+	globOrder = Math.ceil(v);
+	globOrder_isHalf = (globOrder!=v);
+
+	hlbGrid.refreshProperties(globOrder_exact)
+	mrtGrid.refreshProperties(globOrder_exact)
+	d3.select('#morton-chart span.numCells').text(mrtGrid.sfc4.nKeys)
+	d3.select('#hilbert-chart span.numCells').text(hlbGrid.sfc4.nKeys)
+
+	hlbGrid.build(false)
+	mrtGrid.build(false)
+  if (mrtGrid.layout.circles) mrtGrid.buildCaption() // only one draw
+  }
+function toggleLabels(active) {
+  mrtGrid.layout.labelMain=active;
+  hlbGrid.layout.labelMain=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+function toggleCoords(active) {
+  mrtGrid.layout.labelIJ=active;
+  hlbGrid.layout.labelIJ=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+function toggleCircles(active) {
+  mrtGrid.layout.circles=active;
+  hlbGrid.layout.circles=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+function toggleCurve(active) {
+  mrtGrid.layout.drawCurve=active;
+  hlbGrid.layout.drawCurve=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+function toggleGrid(active) {
+  mrtGrid.layout.rects=active;
+  hlbGrid.layout.rects=active;
+  changeOrder(mrtGrid.sfc4.level) //  refresh all
+}
+
+/////
 function ONLOAD() {
   // Inits, interface:
   xzoomNode = document.getElementById('xzoom');
@@ -163,7 +177,7 @@ function ONLOAD() {
 
   let mrt = new GSfc4qLbl_Morton(globOrder,'4h') // int level
   mrtGrid = new GridOfCurve_D3('morton-chart', mrt);
-  mrtGrid.buildCaption() // only one draw
+  if (mrtGrid.layout.circles) mrtGrid.buildCaption() // only one draw
 } // \ONLOAD
 
 ////////////
@@ -186,6 +200,7 @@ function ONLOAD() {
   <option value="std">Standard</option>
   <option value="dec">Decimal</option>
   <option value="32">base 32nvu</option>
+  <option value="16">base 16h</option>
   <option value="4">base 4h</option>
 </select>
 
@@ -210,9 +225,16 @@ function ONLOAD() {
 </table>
 
 <br/>
-<input type="checkbox" checked="1" onchange="toggleLabels(this.checked)" value="1" /> Show labels
+Turn on/off: <input type="checkbox" checked="1" onchange="toggleLabels(this.checked)" value="1" /> Labels
 &nbsp;&nbsp;
-<input type="checkbox" checked="1" onchange="toggleCoords(this.checked)" value="1" /> Show coordinates (<i>i,j</i>)
+<input type="checkbox" checked="1" onchange="toggleCircles(this.checked)" value="1" /> Circles
+&nbsp;&nbsp;
+<input type="checkbox" checked="1" onchange="toggleCoords(this.checked)" value="1" /> Coordinates (<i>i,j</i>)
+&nbsp;&nbsp;
+<input type="checkbox" checked="1" onchange="toggleCurve(this.checked)" value="1" /> Curve
+&nbsp;&nbsp;
+<input type="checkbox" checked="1" onchange="toggleGrid(this.checked)" value="1" /> Grid
+
 
 <br/>Zoom/pan:
 	<select id="xzoom">

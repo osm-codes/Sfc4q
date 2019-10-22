@@ -53,7 +53,7 @@ class GridOfCurve {
       this.lblBase = lblBase || this.lblBase || 'std'
       const lblIsDec = (this.lblBase=='dec' || this.lblBase==10)
       const lblIs32  = (this.lblBase==32 && !(this.sfc4.level%2.5))
-      const lblIs16  = (this.lblBase!=4  && this.sfc4.level>2)
+      const lblIs16  = (this.lblBase==16 || (this.lblBase!=4  && this.sfc4.level>2))
       this.lblChk = [
         lblIsDec,lblIs32,lblIs16,  // using check-order
         lblIsDec? "decimal": lblIs32? "base 32": lblIs16? "base 16h": "base 4h",
@@ -286,14 +286,14 @@ class GridOfCurve_D3 extends GridOfCurve {
       let partialData = this.dataBuild(true);
       if (this.sfc4.nBKeys>4n && partialData.length>1) this.D3_svg.selectAll()
         .data( partialData )
-        .enter().append("text")
+        .enter().append("text")  // white text
           .attr("x", d => d.x+rw/2.15 -0.5 )
           .attr("y", d => d.y+rw/1.7 +0.5)
           .text( d => d.idPub )
           .style("font-size", (rw<40)? (ck4==4? "8.8pt": "11.5pt"):"13.5pt")
           .attr("fill","#FFF").style("style","label");
 
-      D3DataEnter.append("text")
+      D3DataEnter.append("text")  // black text
       .attr("x", d => d.x+rw/2.1 )
       .attr("y", d => d.y+rw/1.7 )
       .text( d => d.idPub )
@@ -307,7 +307,7 @@ class GridOfCurve_D3 extends GridOfCurve {
 
     if (this.layout.labelIJ) // (i,j) label text
       D3DataEnter.append("text")
-      .attr("x", d => d.x+0.3 + (mySfc.isHalf? 0.8: 0))
+      .attr("x", d => d.x+0.8 + (mySfc.isHalf? 0.8: 0))
       .attr("y", d => d.y+10 )
       .text( d => `${d.i},${d.j}` )
       .style("font-size", "8pt").attr("fill","#A44").style("style","label");
