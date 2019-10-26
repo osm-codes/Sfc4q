@@ -50,6 +50,13 @@
     opacity:0.8; /* 0.5 to 1*/
   }
 
+  #chartsContainer svg text.gridCaption {
+    font-size: 11pt;
+    fill: #000;
+    style: label;
+    font-family: monospace;
+  }
+
   #chartsContainer div.theChartTooltip {
       display: none;
       position: absolute;
@@ -91,13 +98,17 @@ var globOrder_isHalf = (globOrder != globOrder_exact);
 function changeLblBase(base) {
   // check is valid /std|dec|32/
   let level = mrtGrid.sfc4.level
+  let isGhs = false;
+  if (base=='ghs') {isGhs = true; base='32'}
   if (base=='32' && (level%2.5)) {
     alert("Base32 can be used\nonly on levels 2.5, 5, 10, etc.")
     return false;
   }
+  mrtGrid.layout.labelGeo=isGhs
+  hlbGrid.layout.labelGeo=isGhs
   mrtGrid.lblBase=base
   hlbGrid.lblBase=base
-  changeOrder(level) //  refresh all
+  changeLayout(level) //  refresh all
   return true;
 }
 
@@ -110,7 +121,7 @@ function redoOrderOptions(mode='all',max=15) {
       (0.5 + x/2):
       ( modeInt? parseInt(1+x): (0.5+x) )
   );
-	document.getElementById('xvalue').innerHTML = opts
+	document.getElementById('toggle-level').innerHTML = opts
 		.map(x => `<option${(x==globOrder_exact)? ' selected':''}>${x}</option>`)
 		.join()
 	;
@@ -124,11 +135,16 @@ function setFormOption(domId,val) {
 }
 
 //////
-function changeOrder(v) {
-	globOrder_exact = v
-	globOrder = Math.ceil(v);
-	globOrder_isHalf = (globOrder!=v);
 
+function toggleLevel(v) {
+  if (!v) v = mrtGrid.sfc4.level;
+	globOrder_exact  = v
+	globOrder        = Math.ceil(v)
+	globOrder_isHalf = (globOrder!=v)
+  changeLayout()
+}
+
+function changeLayout() {
 	hlbGrid.refreshProperties(globOrder_exact)
 	mrtGrid.refreshProperties(globOrder_exact)
 	d3.select('#morton-chart span.numCells').text(mrtGrid.sfc4.nKeys)
@@ -137,31 +153,6 @@ function changeOrder(v) {
 	hlbGrid.build(false)
 	mrtGrid.build(false)
   if (mrtGrid.layout.circles) mrtGrid.buildCaption() // only one draw
-  }
-function toggleLabels(active) {
-  mrtGrid.layout.labelMain=active;
-  hlbGrid.layout.labelMain=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-function toggleCoords(active) {
-  mrtGrid.layout.labelIJ=active;
-  hlbGrid.layout.labelIJ=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-function toggleCircles(active) {
-  mrtGrid.layout.circles=active;
-  hlbGrid.layout.circles=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-function toggleCurve(active) {
-  mrtGrid.layout.drawCurve=active;
-  hlbGrid.layout.drawCurve=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
-}
-function toggleGrid(active) {
-  mrtGrid.layout.rects=active;
-  hlbGrid.layout.rects=active;
-  changeOrder(mrtGrid.sfc4.level) //  refresh all
 }
 
 /////
@@ -170,14 +161,29 @@ function ONLOAD() {
   xzoomNode = document.getElementById('xzoom');
   redoOrderOptions('all');
   document.getElementById("form1").reset();// reset selected options of page history.
-  setFormOption('xvalue',globOrder_exact);
+  setFormOption('toggle-level',globOrder_exact);
+  const toggles = ['rects','labelMain','labelIJ','circles','drawCurve','level'];
   // Build grids:
   let hlb = new GSfc4qLbl_Hilbert(globOrder,'4h') // int level
   hlbGrid = new GridOfCurve_D3('hilbert-chart', hlb);
 
   let mrt = new GSfc4qLbl_Morton(globOrder,'4h') // int level
   mrtGrid = new GridOfCurve_D3('morton-chart', mrt);
-  if (mrtGrid.layout.circles) mrtGrid.buildCaption() // only one draw
+  if (mrtGrid.layout.circles) mrtGrid.buildCaption(); // only one draw
+
+  const togglesD3 = d3.selectAll( toggles.map(t=>'#toggle-'+t).join(',') );
+  togglesD3.on("change", ()=> { // toggle updating layout
+      for (const t of toggles) {
+        let active = document.getElementById('toggle-'+t).checked;
+        mrtGrid.layout[t]=active;
+        hlbGrid.layout[t]=active;
+      }
+      //bug togglesD3.call( obj=> { let active = obj.property('checked'); let name = obj.property('i').slice(6); })
+      mrtGrid.refresh_D3_state() // testando onde usar
+      hlbGrid.refresh_D3_state()
+      changeLayout() //  refresh all
+    });
+
 } // \ONLOAD
 
 ////////////
@@ -186,22 +192,12 @@ function ONLOAD() {
 
 <body onload="ONLOAD()">
 <form id="form1">
-<b>Level</b> <i>L</i> of <span style="color:red">grid</span> refinement = <a href="https://en.wikipedia.org/wiki/Space-filling_curve">Space-filling <span style="color:blue">curve</span></a>  <b>order</b>:
-	<select id="xvalue" onchange="changeOrder(this.value)"></select>
+Hierarchical <b>level</b> <i>L</i> of <span style="color:red">grid</span> refinement = <a href="https://en.wikipedia.org/wiki/Space-filling_curve">Space-filling <span style="color:blue">curve</span></a> level:
+	<select id="toggle-level" onchange="toggleLevel(this.value)"></select>
   <select id="xopts" onchange="redoOrderOptions(this.value)">
     <option value="all">all L</option>
     <option value="int">L int</option>
     <option value="half">half L</option>
-</select>
-&nbsp;&nbsp; Cell codes:
-<select
-  onchange="if (!changeLblBase(this.value)) this.selectedIndex=this.oldIndex" onFocus="this.oldIndex=this.selectedIndex"
-  >
-  <option value="std">Standard</option>
-  <option value="dec">Decimal</option>
-  <option value="32">base 32nvu</option>
-  <option value="16">base 16h</option>
-  <option value="4">base 4h</option>
 </select>
 
 <br/>&nbsp;<br/>
@@ -225,30 +221,40 @@ function ONLOAD() {
 </table>
 
 <br/>
-Turn on/off: <input type="checkbox" checked="1" onchange="toggleLabels(this.checked)" value="1" /> Labels
+Turn on/off: <label><input type="checkbox" checked="1" id="toggle-labelMain" value="1" /> Labels</label>
 &nbsp;&nbsp;
-<input type="checkbox" checked="1" onchange="toggleCircles(this.checked)" value="1" /> Circles
+<label><input type="checkbox" checked="1" id="toggle-circles" value="1" /> Circles</label>
 &nbsp;&nbsp;
-<input type="checkbox" checked="1" onchange="toggleCoords(this.checked)" value="1" /> Coordinates (<i>i,j</i>)
+<label><input type="checkbox" checked="1" id="toggle-drawCurve" value="1" /> Curve</label>
 &nbsp;&nbsp;
-<input type="checkbox" checked="1" onchange="toggleCurve(this.checked)" value="1" /> Curve
+<label><input type="checkbox" checked="1" id="toggle-labelIJ" value="1" /> Coordinates (<i>i,j</i>)</label>
 &nbsp;&nbsp;
-<input type="checkbox" checked="1" onchange="toggleGrid(this.checked)" value="1" /> Grid
+<label><input type="checkbox" checked="1" id="toggle-rects" value="1" /> Grid</label>
 
 
-<br/>Zoom/pan:
+<br/>
+Hierarchical <a href="http://osm.codes/_foundations/art1.pdf" target="_blank">cell codes</a>:
+<select
+  onchange="if (!changeLblBase(this.value)) this.selectedIndex=this.oldIndex" onFocus="this.oldIndex=this.selectedIndex"
+  >
+  <option value="std">Standard</option>
+  <option value="4">base 4h</option>
+  <option value="dec">Decimal</option>
+  <option value="16">base 16h</option>
+  <option value="ghs">base 32ghs</option>
+  <option value="32">base 32nvu</option>
+</select>
+&nbsp;&nbsp;&nbsp;&nbsp;
+Zoom/pan:
 	<select id="xzoom">
 		<option value="1" selected>Enable
 		<option value="0">Disable<!--
 		<option value="-1">RESET and Enable
 		<option value="-2">RESET and Disable -->
 	</select>
-&nbsp; &nbsp; &nbsp;
-On mouse-over: hierarchical <a href="http://osm.codes/_foundations/art1.pdf" target="_blank">base4h, base16h and base 32-nvu described here</a>.
-
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/ppKrauss/Sfc4q">Sources</a>
 </form>
-<hr/>
-<p align="center"><a href="https://github.com/ppKrauss/Sfc4q">source</a> | <a href="http://bl.ocks.org/ppKrauss/raw/f8e947f4628a7cc066ef0b9024f79e13/">compare paths</a></p>
 
 </body>
 </html>

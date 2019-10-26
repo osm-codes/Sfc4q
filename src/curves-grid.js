@@ -112,7 +112,7 @@ class GridOfCurve {
 class GridOfCurve_D3 extends GridOfCurve {
 
   constructor(conf, sfc4, layout, box_width, box_height=null, grdID=1, reftab='chartsContainer') {
-    const toBuildHere=true, toBuildToolTip=true  // future configs
+    const toBuildHere=true, toBuildZoomTool=true, toBuildToolTip=true;  // future configs
     if (typeof conf == 'object') {
       super(conf.sfc4, conf.box_width, conf.box_height)
       this.refresh_D3(conf.domRef_id, conf.grdID, conf.reftab, conf.layout)
@@ -121,33 +121,48 @@ class GridOfCurve_D3 extends GridOfCurve {
       this.refresh_D3(conf, grdID, reftab, layout)
     }
     this.distinctColors = {}
-    this.lblChk = null
     this.fracTime = null
     this.D3canvas = null
     this.MIN_RECT_SIZE = 15
     if (toBuildHere) this.build(true)
     if (toBuildToolTip) this.tooltip_build() // conferir se precisa rebuild das propriedades do data
-    this.build_zoomTool() // need if
+    if (toBuildZoomTool) this.build_zoomTool()
   }
 
-  refresh_D3(domRef_id, grdID, reftab, layout) {
+  refresh_D3(domRef_id, grdID, reftab, layout, colwidth=40) {
     this.domRef_id = domRef_id || null
     this.grdID     = grdID     || null
     this.reftabDOM = document.getElementById(reftab);
     if (!this.reftabDOM) console.log("ops, need CORRECT 'reftab' for canvas sizes")
-    this.layout = layout || {rects:true, circles:true, labelMain:true, labelIJ:true, drawCurve: true};
+    if (!this.box_width) {
+      let refWidth = this.reftabDOM? parseInt( this.reftabDOM.getBoundingClientRect().width/2.0 ): 999999;
+      this.box_width = Math.min(window.innerWidth, refWidth) - colwidth;  // redefined: need propagate
+      this.refreshProperties()  // yet triggered by super()
+    }
+    this.layout = {rects:true, circles:true, labelMain:true, labelIJ:true, drawCurve: true};
+    if (typeof layout == 'object')  this.layout = layout || this.layout;
     // check need for call buildSvg() here
   }
 
-  buildSvg(firstBuild=true,colwidth=40) {
+  refresh_D3_state(){
+    this.num_nBKeys = Number(this.sfc4.nBKeys)
+    if (this.sfc4.isHalf) this.num_nBKeys = this.num_nBKeys/2;
+    this.nBKeysFrac = Math.round(this.num_nBKeys/150)
+    this.fracTime = ((this.num_nBKeys>1000)? 9000: (this.num_nBKeys>200)? 3800: 2800)/this.num_nBKeys;
+    //let fracFirst = this.num_nBKeys/((this.num_nBKeys>1000)? 100: (this.num_nBKeys>10)? 10: 2);
+    // Flag layout corrections:
+    let rw = this.cell_refWidth
+    this.layout.rects     = this.layout.rects     && rw>this.MIN_RECT_SIZE
+    this.layout.drawCurve = this.layout.drawCurve && rw>10
+    this.layout.labelMain = this.layout.labelMain && rw>20
+    this.layout.labelIJ   = this.layout.labelIJ   && rw>35
+    this.layout.labelGeo  = true;
+  }
+
+  buildSvg(firstBuild=true) {
     if (firstBuild || !this.D3_svg) {
         if (this.D3_svg)
           this.D3_svg.selectAll("*").remove(); // oops, please test
-        if (!this.box_width) {
-          let refWidth = parseInt( this.reftabDOM.getBoundingClientRect().width/2.0 );
-          this.box_width = Math.min(window.innerWidth, refWidth) - colwidth;
-          this.refreshProperties()
-        }
         if (this.box_width< conf_canvasWidth_min) {
             let perc = Math.round( 100*(conf_canvasWidth_min-this.box_width)/conf_canvasWidth_min )
             let msg = `This visualization not works with small screens.\nPlease use a screen ${perc}% bigger.`
@@ -160,19 +175,7 @@ class GridOfCurve_D3 extends GridOfCurve {
         this.D3_svg.attr("class", "the_grid" + (this.grdID? ` grdID${this.grdID}`: '') );
     } else
       this.D3_svg.selectAll("*").remove(); // remove elements from svg/g, preserve SVG attributes and catchall
-
-    this.num_nBKeys = Number(this.sfc4.nBKeys)
-    if (this.sfc4.isHalf) this.num_nBKeys = this.num_nBKeys/2;
-    this.nBKeysFrac = Math.round(this.num_nBKeys/150)
-    this.fracTime = ((this.num_nBKeys>1000)? 9000: (this.num_nBKeys>200)? 3800: 2800)/this.num_nBKeys;
-    //let fracFirst = this.num_nBKeys/((this.num_nBKeys>1000)? 100: (this.num_nBKeys>10)? 10: 2);
-
-    // Flag layout corrections:
-    let rw = this.cell_refWidth
-    this.layout.rects     = this.layout.rects     && rw>this.MIN_RECT_SIZE
-    this.layout.drawCurve = this.layout.drawCurve && rw>10
-    this.layout.labelMain = this.layout.labelMain && rw>20
-    this.layout.labelIJ   = this.layout.labelIJ   && rw>35
+    this.refresh_D3_state()
   } // \buildSvg
 
   bitsToColors(bs,len) { // enhancing prefixes
@@ -204,6 +207,7 @@ class GridOfCurve_D3 extends GridOfCurve {
     const ck  = this.lblChk
     const rw0 = this.cell_refWidth
     const rh0 = this.cell_refHeight
+    const l32type = this.layout.labelGeo? '32ghs': '32nvu';
     const mySfc = this.sfc4
     var r = [].fill(null,0,this.num_nBKeys-1)  // será revisto e oTheFly!
     for(let id=0; id<maxIdLoop; id++) {
@@ -213,7 +217,7 @@ class GridOfCurve_D3 extends GridOfCurve {
       let idx = mySfc.setKey(id);
       let colorCode = this.bitsToColors( idx.id_toString('2'), idx.keyBits ) // toBitString
       let id4 = idx.id_toString('4h'),     id16   = idx.id_toString('16h'),
-          id32 = idx.id_toString('32nvu')
+          id32 = idx.id_toString(l32type)
       if (this.sfc4.isHalf) {
          let xy1 = this.ij_to_xy( ij1[0], ij1[1] )
          if (Math.abs(xy[0]-xy1[0]) > 0) rw = rw*2;  // revisar
@@ -284,20 +288,18 @@ class GridOfCurve_D3 extends GridOfCurve {
 
     if (this.layout.labelMain) { // cell ID label text
       let partialData = this.dataBuild(true);
-      if (this.sfc4.nBKeys>4n && partialData.length>1) this.D3_svg.selectAll()
-        .data( partialData )
-        .enter().append("text")  // white text
-          .attr("x", d => d.x+rw/2.15 -0.5 )
-          .attr("y", d => d.y+rw/1.7 +0.5)
+      if (this.sfc4.nBKeys>4n) D3DataEnter.append("text")  // White text
+          .attr("x", d => d.x+d.width/2.15 -0.5 )
+          .attr("y", d => d.y+d.height/1.7 +0.9)
           .text( d => d.idPub )
-          .style("font-size", (rw<40)? (ck4==4? "8.8pt": "11.5pt"):"13.5pt")
-          .attr("fill","#FFF").style("style","label");
+          .style("font-size", (rw<40)? (ck4==4? "8.8pt": "11.6pt"):"11.8pt")
+          .attr("fill","#FFF").style("style","label").style("font-weight","bold");
 
-      D3DataEnter.append("text")  // black text
-      .attr("x", d => d.x+rw/2.1 )
-      .attr("y", d => d.y+rw/1.7 )
+      D3DataEnter.append("text")  // Black text
+      .attr("x", d => d.x+d.width/2.1 )
+      .attr("y", d => d.y+d.height/1.7 +1.3 )
       .text( d => d.idPub )
-      .style("font-size", (rw<40)? (ck4==4? "8pt": "10pt"):"12pt").style("style","label")
+      .style("font-size", (rw<40)? (ck4==4? "8.2pt": "10.5pt"):"12.2pt").style("style","label")
       /* .call( (s,cond) => {
         if (cond) s.attr("transform", "translate(2,2) rotate(90)")
         console.log(cond)
@@ -327,18 +329,20 @@ class GridOfCurve_D3 extends GridOfCurve {
     let rb = d3.select(svgSelect)
     rb.selectAll("*").remove();
     rb.attr("width", wdExtra)
-      .attr("height", this.box_width+20);
-
+      .attr("height", this.box_width+20)
+    ;
     rb.selectAll().data( colors ).enter().append("rect")
       .attr("x", 0 )
       .attr("y", (d,i) => i*h + yShift)
       .attr("width",wd).attr("height",h)
-      .style("fill",d=>d);
+      .style("fill",d=>d)
+    ;
     rb.selectAll().data( colors ).enter().append("text")
       .attr("x", wd )
       .attr("y", (d,i) => h+i*h+yShift )
       .text( (d,i) => (myC_len<9 || (i%myC_lenFrac)==0)? myC[d]: '' )
-      .style("font-size","8pt").attr("fill","#000").style("style","label");
+      .attr("class","gridCaption")
+    ;
   }
 
   tooltip_msg(ij) {
@@ -347,7 +351,8 @@ class GridOfCurve_D3 extends GridOfCurve {
     let id = this.sfc4.sbiID.val // number
     let id4  = this.sfc4.id_toString('4h')
     let id16 = this.sfc4.id_toString('16h')
-    let id32 = this.sfc4.id_toString('32nvu')
+    const l32type = this.layout.labelGeo? '32ghs': '32nvu';
+    let id32 = this.sfc4.id_toString(l32type)
     let idPub     = lck[0]? id: lck[1]? id32: lck[2]? id16: id4;
     let hex = (!lck[0] && !lck[1] && lck[2])?
               '':    `base 16h: ${adTag(id16)}`;
@@ -424,17 +429,3 @@ class GridOfCurve_D3 extends GridOfCurve {
 ////////////// non-exported components of this module.
 
 function adTag(s,tag="code") { return `<${tag}>${s}</${tag}>`; }
-
-
-function baseItens(sbi_id,ij) {
-  // Here define the presentation order of bases.
-  let crvID   = sbi_id.val // or int
-  var crvID4  = sbi_id.toString('4h');  // parseInt(crvID).toString(4).padStart(globOrder,'0');
-  var crvID16 = sbi_id.toString('16h'); // parseInt(crvID).toString(16).padStart(globOrder,'0');
-  var crvID32 = sbi_id.toString('32nvu');  // parseInt(crvID).toString(32).padStart(globOrder/2,'0');
-  let msgb32 = (globOrder_exact % 2.5)? '': `<hr/>base32nvu: ${adTag(crvID32)}`;
-  let msg;
-  if (globOrder_exact>2) msg = `base16h: ${adTag(crvID16)}${msgb32}<hr/>base4: ${adTag(crvID4)}`;
-  else msg = `base4h: ${adTag(crvID4)}<hr/>base16h: ${adTag(crvID16)}`;
-  return msg + `<br/>decimal: ${adTag(crvID)}<br/>(i,j)=(${ij[0]},${ij[1]})`;
-}
