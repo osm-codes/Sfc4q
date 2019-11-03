@@ -44,7 +44,7 @@ class GSfc4q {
   }
 
   /**
-   * Refresh inicializations, mutating all propertis if necessary. Used by constructor.
+   * Refresh inicializations, changing all properties if necessary. Used by constructor.
    * @param {float} level - null (no mutation) or hierarchical level of aperture-4 hierarchical grid. Valid integer and "half levels".
    */
   refresh(level) {
@@ -375,7 +375,7 @@ class GSfc4qLbl_Hilbert extends GSfc4qLbl { // Hilbert Curve.
  * Sized BigInt's (SizedBigInt) are arbitrary-precision integers with defined number of bits.
  * Each instance is a pair (size,number). Input and output accepts many optional representations.
  *
- * Original source at [github/SizedBigInt](https://github.com/ppKrauss/SizedBigInt)
+ * Adapted from original source at [github/SizedBigInt](https://github.com/ppKrauss/SizedBigInt)
  *  and foundations at [this PDF](http://osm.codes/_foundations/art1.pdf).
  */
 class SizedBigInt {
@@ -474,8 +474,17 @@ class SizedBigInt {
   // // //
   // Getters and output methods:
 
+  /**
+   * Standard default getter for this class.
+   */
   get value() { return [this.bits,this.val] }
 
+  /**
+   * Converts internal representation (of the SizedBigInt) into a string of ASCII 0s and 1s.
+   *
+   * Note: Javascript not offers a real array of bits, only array of bytes by Uint8Array().
+   * @return {string} the "bit-string ASCII" representation.
+   */
   toBitString(){
     return (this.val===null)
       ? ''
@@ -538,19 +547,6 @@ class SizedBigInt {
   }
 
   /**
-   * Calculates the integer log2() of a BigInt... So, its number of bits.
-   * @param {BigInt} n - a positive integer.
-   * @return {integer} - the ilog2(n)=ceil(log2(n))
-   */
-  static ilog2(n) {
-    return n.toString(2).length - (
-      (n<0n)
-      ? 2 //discard bit of minus
-      : 1
-    );
-  }
-
-  /**
    * Check and normalize the base label. Access the global kx_baseLabel.
    * @param {string} label
    * @param {boolean} retLabel - to return string instead pointer.
@@ -567,21 +563,6 @@ class SizedBigInt {
     if (r.isAlias) r = SizedBigInt.kx_baseLabel[r.isAlias];
     return retLabel? r.label: r;
   }
-
-  /**
-   * Division N/D. Returns integer part and "normalized fractional part"
-   * @param {BigInt} N - positive numerator.
-   * @param {BigInt} D - positive non-zero denominator.
-   * @param {BigInt} P - power to be used in 2**P, with P>0.
-   * @return {Array} - values [integer_part,fractional_part] = [IP,FP] where F=FP*2^P.
-   */
-  static bigint_div(N,D,P=BigInt(64)) {
-    let I = N/D  // ideal a function that returns R and Q.
-    let R = N-I*D // compare with performance of R=N%D
-    let F=((BigInt(2)**P)*R)/D
-    return [I,F]
-  }
-
 
   // // //
   // Iternal use, cache-manager methods:
@@ -638,7 +619,7 @@ class SizedBigInt {
      SizedBigInt.kx_baseLabel_setRules();
      // to prepare cache, for example Bae16h, run here SizedBigInt.kx_trConfig('16h')
    } // \if
-  }
+ } // \kx_RefreshDefaults
 
   /**
    * Apply correction rules to SizedBigInt.kx_baseLabel.
@@ -694,6 +675,50 @@ class SizedBigInt {
         } // \for i, \for bits
     }
     SizedBigInt.kx_tr['2-to-'+r.label] = SizedBigInt.objSwap(SizedBigInt.kx_tr[label]);
+  } // \kx_trConfig
+
+  // // //
+  // BigInt auxiliar utilities: (can drop from here!)
+
+  /**
+   * Calculates the integer log2() of a BigInt... So, its number of bits.
+   * @param {BigInt} n - a positive integer.
+   * @return {integer} - the ilog2(n)=ceil(log2(n))
+   */
+  static ilog2(n) {
+    return n.toString(2).length - (
+      (n<0n)
+      ? 2 //discard bit of minus
+      : 1
+    );
+  }
+
+  /**
+   * Division N/D with rest.
+   * @param {BigInt} N - positive numerator.
+   * @param {BigInt} D - positive non-zero denominator.
+   * @return {Array} - BigInt values [integerPart,rest]
+   */
+  static bigint_divrest(N,D) {
+    let I = N/D  // ideal a function that returns R and Q.
+    let R = N-I*D // compare with performance of R=N%D
+    return [I,R]  // quocient and rest.
+  }
+
+  /**
+   * Division N/D. Returns integer part and "normalized fractional part",
+   *  normailized by a power of 2; that is,
+   *  result = integerPart + 1/fractionalPart = iP + 1/(nfP*2^P)
+   * @param {BigInt} N - positive numerator.
+   * @param {BigInt} D - positive non-zero denominator.
+   * @param {BigInt} P - default 64, power to be used in 2**P, with P>0 and 2**P/D>=1.
+   * @return {Array} - BigInt values [integerPart,normalizedFractionalPart] = [iP,nFP] where fraction=1/(nFP*2^P).
+   */
+  static bigint_div(N,D,P=64n) {
+    let I = N/D  // ideal a function that returns R and Q.
+    let R = N-I*D // compare with performance of R=N%D
+    let F = ((2n**P)/D)*R  // = ((BigInt(2)**P)*R)/D
+    return [I,F]
   }
 
 } // \SizedBigInt

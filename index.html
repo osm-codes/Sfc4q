@@ -199,6 +199,17 @@ Hierarchical <b>level</b> <i>L</i> of <span style="color:red">grid</span> refine
     <option value="int">L int</option>
     <option value="half">half L</option>
 </select>
+&nbsp;&nbsp;&nbsp;&nbsp; Hierarchical <a href="http://osm.codes/_foundations/art1.pdf" target="_blank">cell codes</a>:
+<select
+  onchange="if (!changeLblBase(this.value)) this.selectedIndex=this.oldIndex" onFocus="this.oldIndex=this.selectedIndex"
+  >
+  <option value="std">Standard</option>
+  <option value="4">base 4h</option>
+  <option value="dec">Decimal</option>
+  <option value="16">base 16h</option>
+  <option value="ghs">base 32ghs</option>
+  <option value="32">base 32nvu</option>
+</select>
 
 <br/>&nbsp;<br/>
 
@@ -233,18 +244,7 @@ Turn on/off: <label><input type="checkbox" checked="1" id="toggle-labelMain" val
 
 
 <br/>
-Hierarchical <a href="http://osm.codes/_foundations/art1.pdf" target="_blank">cell codes</a>:
-<select
-  onchange="if (!changeLblBase(this.value)) this.selectedIndex=this.oldIndex" onFocus="this.oldIndex=this.selectedIndex"
-  >
-  <option value="std">Standard</option>
-  <option value="4">base 4h</option>
-  <option value="dec">Decimal</option>
-  <option value="16">base 16h</option>
-  <option value="ghs">base 32ghs</option>
-  <option value="32">base 32nvu</option>
-</select>
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 Zoom/pan:
 	<select id="xzoom">
 		<option value="1" selected>Enable

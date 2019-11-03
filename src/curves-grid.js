@@ -94,11 +94,9 @@ class GridOfCurve {
   xy_to_ij(x,y) {
     let ref_i = Math.floor(x/this.cell_refWidth),
         ref_j = Math.floor(y/this.cell_refHeight)
-    if (this.needSwap) {
+    if (this.needSwap) { // use bKey instead key.
       console.log("BUG: needSwap need to develop xy_to_ij()")
-      // for Hilbert can check S2 geometry, a (s,t) to (i,j) resolution.
-      // use ij_nSwaps(ref_i,ref_j) as first guess
-      // scan to obtain number of xSwaps and ySwaps... use the unit s,t before x,y.
+      // for Hilbert the number of xSwaps and ySwaps is a constant.
     } else
       return [ref_i,ref_j];
   }
@@ -124,8 +122,8 @@ class GridOfCurve_D3 extends GridOfCurve {
     this.fracTime = null
     this.D3canvas = null
     this.MIN_RECT_SIZE = 15
-    if (toBuildHere) this.build(true)
-    if (toBuildToolTip) this.tooltip_build() // conferir se precisa rebuild das propriedades do data
+    if (toBuildHere) this.build(true) // first
+    if (toBuildToolTip) this.tooltip_build()
     if (toBuildZoomTool) this.build_zoomTool()
   }
 
@@ -144,12 +142,11 @@ class GridOfCurve_D3 extends GridOfCurve {
     // check need for call buildSvg() here
   }
 
-  refresh_D3_state(){
+  refresh_D3_state(){ // for buildSvg()
     this.num_nBKeys = Number(this.sfc4.nBKeys)
     if (this.sfc4.isHalf) this.num_nBKeys = this.num_nBKeys/2;
     this.nBKeysFrac = Math.round(this.num_nBKeys/150)
     this.fracTime = ((this.num_nBKeys>1000)? 9000: (this.num_nBKeys>200)? 3800: 2800)/this.num_nBKeys;
-    //let fracFirst = this.num_nBKeys/((this.num_nBKeys>1000)? 100: (this.num_nBKeys>10)? 10: 2);
     // Flag layout corrections:
     let rw = this.cell_refWidth
     this.layout.rects     = this.layout.rects     && rw>this.MIN_RECT_SIZE
@@ -238,17 +235,17 @@ class GridOfCurve_D3 extends GridOfCurve {
   }
 
   build(firstBuild=true, line_width=2) { //  draw grid!
-    if (conf_alertLevel>1) console.log("debug build:",this.sfc4.curveName)
-    this.buildSvg(firstBuild);
+    if (conf_alertLevel>1) console.log("debug build:",this.sfc4.curveName);
+    this.buildSvg(firstBuild)
     const myThis = this
     let rw = this.cell_refWidth
     const ck4 = this.lblChk[4]
     var mySfc = this.sfc4
     let bits = (mySfc.nBKeys-1n).toString(2).length
-    var sbi = new SizedBigInt(); // this.sfc4.setID_byKey(3):
+    var sbi = new SizedBigInt();
     let D3DataEnter = this.D3_svg.selectAll()
       .data( this.dataBuild() )
-      .enter()
+      .enter();
 
     if (this.layout.rects) // // // Red rectangular grid:
       D3DataEnter.append("rect")
@@ -257,21 +254,19 @@ class GridOfCurve_D3 extends GridOfCurve {
       .attr("width",d => d.width).attr("height",d => {return d.height})
       .style("fill","#FFF").style("stroke","#F00");
 
-    if (this.layout.drawCurve) { // path
+    if (this.layout.drawCurve) { // // // Curve path:
       const dashDelay = this.animeFracTime(this.num_nBKeys)*1.8
       let curvePath = d3.line()
           .x(d=>d.x + d.width/2)
-          .y( d=>d.y + d.height/2)
+          .y( d=>d.y + d.height/2);
       this.D3_svg.append("path")
         .attr('class',"curve")
-        .attr("d", curvePath( myThis.dataBuild() ))
+        .attr("d", curvePath( myThis.dataBuild() ))  // ? no data cache
         .transition()
           .duration(0)
           .delay(  dashDelay  )
           .attr('class',"curve curve_dash")
     } // if
-
-
     if (this.layout.circles)  // // // Colured centroid and point-grid circles:
       D3DataEnter.append("circle")
       .attr('cx', d => d.x + d.width/2)
@@ -283,9 +278,8 @@ class GridOfCurve_D3 extends GridOfCurve {
       .style("opacity", 0).transition()
         .duration(0)
         .delay(  (_, i) => myThis.animeFracTime(i)  )
-        .style("opacity", 1);
-
-
+        .style("opacity", 1)
+    ;
     if (this.layout.labelMain) { // cell ID label text
       let partialData = this.dataBuild(true);
       if (this.sfc4.nBKeys>4n) D3DataEnter.append("text")  // White text
@@ -296,16 +290,11 @@ class GridOfCurve_D3 extends GridOfCurve {
           .attr("fill","#FFF").style("style","label").style("font-weight","bold");
 
       D3DataEnter.append("text")  // Black text
-      .attr("x", d => d.x+d.width/2.1 )
-      .attr("y", d => d.y+d.height/1.7 +1.3 )
-      .text( d => d.idPub )
-      .style("font-size", (rw<40)? (ck4==4? "8.2pt": "10.5pt"):"12.2pt").style("style","label")
-      /* .call( (s,cond) => {
-        if (cond) s.attr("transform", "translate(2,2) rotate(90)")
-        console.log(cond)
-      }, mySfc.isHalf && d.width<d.height);
-      */
-    }
+        .attr("x", d => d.x+d.width/2.1 )
+        .attr("y", d => d.y+d.height/1.7 +1.3 )
+        .text( d => d.idPub )
+        .style("font-size", (rw<40)? (ck4==4? "8.2pt": "10.5pt"):"12.2pt").style("style","label")
+    } // \if labelMain
 
     if (this.layout.labelIJ) // (i,j) label text
       D3DataEnter.append("text")
@@ -358,7 +347,8 @@ class GridOfCurve_D3 extends GridOfCurve {
               '':    `base 16h: ${adTag(id16)}`;
     let dec = lck[0]?  '':  `decimal: ${adTag(id)}${hex? '<br/>':''}`;
     let b4  = (idPub!=id4)? `<br/>base4h: ${adTag(id4)}`: '';
-    return [id16, `${lck[3]}: ${adTag(idPub)}<hr/> ${dec}${hex}${b4}<br/>(<i>i,j</i>)=(${ij[0]},${ij[1]})`];
+    let ijc = this.sfc4.isHalf? "i',j'": "i,j";
+    return [id16, `${lck[3]}: ${adTag(idPub)}<hr/> ${dec}${hex}${b4}<br/>(<i>${ijc}</i>)=(${ij[0]},${ij[1]})`];
   }
 
   tooltip_build() {
@@ -403,7 +393,6 @@ class GridOfCurve_D3 extends GridOfCurve {
       .attr("class", "catchall") // see https://stackoverflow.com/a/16923563/287948 and  http://jsfiddle.net/H3W3k/
       .attr("width",myThis.box_width).attr("height",myThis.box_width)
       .style('visibility', 'hidden')
-      //.attr("opacity", 0.0).style("fill","#FFF").style("stroke","#F00"); // need only the external line
     ; // \D3canvas
 
   } // \Tooltip
