@@ -42,6 +42,12 @@ class GSfc4q {
     this.needSwap = false  // about cell rotation (swapping i and j), default value, need overhide
     this.halfIsOptimized = false  // for adaptated Morton and others, default value, need overhide
   }
+  debugStates() {
+    return {
+       level:this.level, blevel:this.blevel, isHalf:this.isHalf, nKeys:this.nKeys, nBKeys:this.nBKeys
+     , keyBits:this.keyBits, nRefRows:this.nRefRows, needSwap:this.needSwap, halfIsOptimized:this.halfIsOptimized
+    }
+  }
 
   /**
    * Refresh inicializations, changing all properties if necessary. Used by constructor.
@@ -143,6 +149,12 @@ class GSfc4qLbl extends GSfc4q {
     this.lblRefresh(base,id0,id0_maxBits)
   }
 
+  debugStates2(use1=true) {
+    return Object.assign(
+      {base:this.base, sbiID:this.sbiID, id0:this.id0, id0_maxBits:this.id0_maxBits}, 
+      use1? this.debugStates(): null 
+    )
+  }
   lblRefresh(base,id0,id0_maxBits) {
     base = base  || this.base  || '4h'
     id0_maxBits = id0_maxBits || this.id0_maxBits || null
@@ -249,18 +261,19 @@ class GSfc4qLbl extends GSfc4q {
 
 
 /**
- * Morton curve for 32 bits, adapted for BigInt and waiting better for 64bits.
+ * Morton curve for 32 bits inputs and 64 bits return.
  * Concrete implementation on the GSfc4qLbl interface.
  *
  * 64 bits REFERENCES:
+ *  https://mmcloughlin.com/posts/geohash-assembly
  *  https://github.com/yinqiwen/geohash-int/blob/master/geohash.c
- *  https://github.com/mmcloughlin/geohash/blob/master/geohash.go   https://discourse.julialang.org/t/interleaving-bits-z-order-curve-morton-code-transpose-binary-matrix/18458/5
+ *  https://mmcloughlin.com/posts/geohash-assembly
  *
  * 32 bits and other REFERENCES:
  *  https://github.com/vasturiano/d3-hilbert
  *  http://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
  *  http://bl.ocks.org/jaredwinick/5073432
- *  http://stackoverflow.com/questions/4909263/how-to-efficiently-de-interleave-bits-inverse-morton
+ *  http://stackoverflow.com/questions/4909263
  */
 class GSfc4qLbl_Morton extends GSfc4qLbl {
 
@@ -271,19 +284,11 @@ class GSfc4qLbl_Morton extends GSfc4qLbl {
     //default this.halfIsOptimized = false // can be true!
   }
 
-  bkey_encode(x, y) { // for 32 bits positive integers
-    if (typeof x == 'number') {x=BigInt(x); y=BigInt(y);}
-    var B = [BigInt(0x55555555), BigInt(0x33333333), BigInt(0x0F0F0F0F), BigInt(0x00FF00FF)];
-    var S = [1n, 2n, 4n, 8n];
-    x = (x | (x << S[3])) & B[3];
-    x = (x | (x << S[2])) & B[2];
-    x = (x | (x << S[1])) & B[1];
-    x = (x | (x << S[0])) & B[0];
-    y = (y | (y << S[3])) & B[3];
-    y = (y | (y << S[2])) & B[2];
-    y = (y | (y << S[1])) & B[1];
-    y = (y | (y << S[0])) & B[0];
-    return x | (y << 1n);
+  bkey_encode(x, y) { // inputs 32 bits positive integers, returns 64 bits.
+    if (typeof x == 'number') {x=BigInt(x); y=BigInt(y)}
+    x = GSfc4qLbl_Morton._bkey_interleave(x)
+    y = GSfc4qLbl_Morton._bkey_interleave(y)
+    return x | (y << 1n)
   }
 
   bkey_decode(d) {
@@ -292,14 +297,23 @@ class GSfc4qLbl_Morton extends GSfc4qLbl {
       Number(GSfc4qLbl_Morton.deinterleave(d)),
       Number(GSfc4qLbl_Morton.deinterleave(d >> 1n))
     ];
-  } // \key_decode
+  }
+
+  static _bkey_interleave(x) { // x must be a 32 bits positive BigInt
+    x = (x | (x << 16n)) & BigInt('0x0000ffff0000ffff')
+    x = (x | (x << 8n) ) & BigInt('0x00ff00ff00ff00ff')
+    x = (x | (x << 4n) ) & BigInt('0x0f0f0f0f0f0f0f0f')
+    x = (x | (x << 2n) ) & BigInt('0x3333333333333333')
+    return (x | (x << 1n) ) & BigInt('0x5555555555555555')
+  }
 
   static deinterleave(x) {
-    x = x & BigInt(0x55555555);
-    x = (x | (x >> 1n)) & BigInt(0x33333333);
-    x = (x | (x >> 2n)) & BigInt(0x0F0F0F0F);
-    x = (x | (x >> 4n)) & BigInt(0x00FF00FF);
-    x = (x | (x >> 8n)) & BigInt(0x0000FFFF);
+    x = x & BigInt('0x5555555555555555');
+    x = (x | (x >> 1n) ) & BigInt('0x3333333333333333');
+    x = (x | (x >> 2n) ) & BigInt('0x0f0f0f0f0f0f0f0f');
+    x = (x | (x >> 4n) ) & BigInt('0x00ff00ff00ff00ff');
+    x = (x | (x >> 8n) ) & BigInt('0x0000ffff0000ffff');
+    x = (x | (x >> 16n)) & BigInt('0x00000000ffffffff');
     return x;
   }
 
@@ -308,6 +322,7 @@ class GSfc4qLbl_Morton extends GSfc4qLbl {
 
 /**
  * Hilbert Curve concrete implementation on the GSfc4qLbl interface. Valid for any BigInt.
+ * Bug on BigInt (more than 31 bits).
  */
 class GSfc4qLbl_Hilbert extends GSfc4qLbl { // Hilbert Curve.
 
@@ -592,14 +607,14 @@ class SizedBigInt {
          }
        ,"8h": {
          base:8,
-         isHierar:true,
+         isHierar:true, // letters are non-hierarchical
          alphabet:"01234567GHJKLM",  // 2*8-2=14 characters
          regex:'^([0-7]*)([GHJ-M])?$',
          ref:"SizedNaturals"
        }
        ,"16h": {
          base:16,
-         isHierar:true,
+         isHierar:true,  // upper case are the non-hierarchical 
          alphabet:"0123456789abcdefGHJKLMNPQRSTVZ", //2*16-2=30 characters
          regex:'^([0-9a-f]*)([GHJ-NP-TVZ])?$',
          ref:"SizedNaturals"
@@ -725,8 +740,9 @@ class SizedBigInt {
 
 
 // // // // // //
-
-//module.exports = { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert }
+// for Node:
+//module.exports = { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert, SizedBigInt }
+//var conf_alertLevel=0
 
 
 

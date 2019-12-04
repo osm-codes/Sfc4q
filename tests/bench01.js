@@ -1,11 +1,11 @@
 // node  --experimental-modules bench01.js
 
-const { GSfc4q_Morton, GSfc4q_Hilbert } = require('./GSfc4q.js');
+const { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert } = require('../src/GSfc4q.js');
 
 var mrt, hlb;
 for (let l=0.5; l<3;  l=l+0.5) {
-	mrt = new GSfc4q_Morton(l,"4h")
-	hlb = new GSfc4q_Hilbert(l,"4h")
+	mrt = new GSfc4qLbl_Morton(l,"4h")
+	hlb = new GSfc4qLbl_Hilbert(l,"4h")
 	console.log(`\n--- LEVEL ${l} ----`)
 	showBase4hValues(mrt.nKeys)
 }
