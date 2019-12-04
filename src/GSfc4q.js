@@ -159,7 +159,7 @@ class GSfc4qLbl extends GSfc4q {
     base = base  || this.base  || '4h'
     id0_maxBits = id0_maxBits || this.id0_maxBits || null
     if (id0!==undefined && id0!==null && BigInt(id0)!=this.id0) {
-        let id0_tmp = SizedBigInt(id0,null,null,id0_maxBits)
+        let id0_tmp = SizedBigInt(id0,null,id0_maxBits,true)
         this.id0 = id0_tmp.val  // a BigInt
         this.id0_maxBits = id0_maxBits? id0_maxBits: id0_tmp.bits
         this.sbiID.fromNull()  // remove old value
@@ -396,24 +396,23 @@ class GSfc4qLbl_Hilbert extends GSfc4qLbl { // Hilbert Curve.
 class SizedBigInt {
 
   /**  @constructor */
-  constructor(val,radix,bits,maxBits=null) {
+  constructor(val,radix,maxBits=null,onErr_cutLSD=true) {
     SizedBigInt.kx_RefreshDefaults(); // global cache once.
     let t = typeof val;
     if (val && t=='object') { // not-null object
        if (val instanceof SizedBigInt)
-        [val,radix,bits,maxBits]=[val.val,null,val.bits,null]; // clone()
+        [val,radix,maxBits]=[val.val,null,val.bits]; // clone()
        else if (val instanceof Array)
-        [val,radix,bits,maxBits]=val;
-       else ({val,radix,bits,maxBits} = val);
+        [val,radix,maxBits]=val;
+       else ({val,radix,maxBits} = val);
        t = typeof val
     }
     // set to default values when 0, null or undefined:
     if (t=='string') {
-      if (!radix) radix = 4;
-      if (bits) throw new Error("Invalid input bits for string");
-      this.fromString(val, radix, maxBits)
+      if (!radix) radix = 4;// 16h as better default
+      this.fromString(val, radix, maxBits, onErr_cutLSD)
     } else // bigint, number or null
-      this.fromInt(val, bits, maxBits)
+      this.fromInt(val, maxBits, onErr_cutLSD)
   }
 
 
@@ -422,11 +421,12 @@ class SizedBigInt {
 
   fromNull() { this.val=null; this.bits=0; return this; }
 
-  fromBitString(strval, maxBits=null) {
+  fromBitString(strval, maxBits=null, onErr_cutLSD=true) {
     if (!strval) return this.fromNull();
     this.bits = strval.length
     if (maxBits && this.bits>maxBits)
-      throw new Error(`bit-length ${this.bits} exceeded the limit ${maxBits}`);
+       if (onErr_cutLSD) strval = strval.slice(0,this.bits)
+       else throw new Error(`ERR4. Bit-length ${this.bits} exceeded the limit ${maxBits}`);
     this.val = BigInt("0b"+strval)
     return this
   }
@@ -438,12 +438,12 @@ class SizedBigInt {
    * @param maxBits - null or maximal number of bits.
    * @return - new or redefined SizedBigInt.
    */
-  fromString(strval, radix=4, maxBits=null) {
-    if (typeof strval!='string') throw new Error("Invalid input type, must be String");
+  fromString(strval, radix=4, maxBits=null, onErr_cutLSD=true) {
+    if (typeof strval!='string') throw new Error("ERR2. Invalid input type, must be String");
     let r = SizedBigInt.baseLabel(radix,false)
     if (!strval) return this.fromNull()
     if (r.base==2)
-      return this.fromBitString(strval,maxBits);
+      return this.fromBitString(strval,maxBits,onErr_cutLSD);
     // else if (r.label='16js') _fromHexString(), to optimize.
     let trLabel = r.label+'-to-2'
     if (!SizedBigInt.kx_tr[trLabel]) SizedBigInt.kx_trConfig(r.label);
@@ -451,28 +451,29 @@ class SizedBigInt {
     let strbin = ''
     for (let i=0; i<strval.length; i++)
       strbin += tr[ strval.charAt(i) ]
-    return this.fromBitString(strbin,maxBits)
+    return this.fromBitString(strbin,maxBits,onErr_cutLSD)
   }
 
   /**
    * Input from BigInt or integer part of a Number.
    * @param val - Number or BigInt.
-   * @param {integer} bits - optional, the bit-length of val, to padding zeros.
-   * @param {integer} maxBits - null or maximal number of bits, truncating.
+   * @param {integer} maxBits - optional, the bit-length of val, to padding zeros.
+   * @param {boolean} onErr_cutLSD - flag to bypass error cuting the LSDs (least significant digits).
    * @return - new or redefined SizedBigInt.
    */
-  fromInt(val, bits=0, maxBits=null) {
+  fromInt(val, maxBits=0, onErr_cutLSD=true) { //old bits=0, maxBits=null
     let t = typeof val
+    maxBits = maxBits? Math.ceil(maxBits): 0 // must be int (for example decimal base use 3.8 bits so it is 4)
     let isNum = (t=='number')
     if (t == 'bigint' || isNum) {
-      if (isNum && !maxBits)  this.val = BigInt( val>>>0 ); // ~ BigInt.asUintN(32,val)
-      else this.val = maxBits? BigInt.asUintN( maxBits, val ) : val;
-      let l = this.val.toString(2).length  // as https://stackoverflow.com/q/54758130/287948
-      this.bits = bits? bits: l;
-      if (l>this.bits)
-        throw new Error("invalid input value, bigger than input bit-length");
-      if (maxBits && this.bits>maxBits)
-        throw new Error(`bit-length ${this.bits} exceeded the limit ${maxBits}`);
+      if (isNum) this.val = BigInt( val>>>0 ); // unsigned  int
+      else this.val = val; // supposed positive
+      let l = this.val.toString(2).length  // no optimization as https://stackoverflow.com/q/54758130/287948
+      this.bits = (maxBits<=0)? l: maxBits
+      if (l>this.bits) {
+        if (onErr_cutLSD) this.val = this.val >> BigInt(l-this.bits);
+        else throw new Error(`ERR3. Invalid input value (lenght=${l}), bigger than input bit-length (predefined ${this.bits})`);
+      }
       return this
     } else // null, undefined, string, etc.
       return this.fromNull()
