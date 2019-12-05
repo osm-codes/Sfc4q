@@ -421,12 +421,36 @@ class SizedBigInt {
 
   fromNull() { this.val=null; this.bits=0; return this; }
 
+  setBits_byMax(maxBits,inputLen,onErr_cutLSD=true) {
+    // mutate this.bits and return action about cut by MaxBits.
+    let cutByMax = false // action
+    this.bits = inputLen
+    if (maxBits) {
+       let forceBits = (maxBits<0)? 0: 1
+       maxBits =Math.ceil( Math.abs(maxBits) )  // for example fractionary number of bits on decimal base
+       if (forceBits) forceBits=maxBits;
+       if (inputLen>maxBits) {
+          if (onErr_cutLSD) cutByMax = true;
+          else throw new Error(`ERR4. Bit-length ${inputLen} exceeded the limit ${maxBits}`);
+          this.bits = maxBits;
+       } else if (inputLen<forceBits)
+          this.bits = forceBits; // will pad zeros on back toString().
+    } else maxBits = 0
+    return [cutByMax,maxBits]
+  }
+
+  /**
+   * Input from string of '0's and '1's, and number of bits can be controled.
+   * @param {string} strval -  with valid /^[01]+$/ regex.
+   * @param {integer} maxBits - positive to enforce length; 0 to preserve input length; negative to express only maximum length.
+   * @param onErr_cutLSD {Boolean} - flag to not throw error, only truncates LSD of binary representation.
+   * @return - new or redefined SizedBigInt.
+   */
   fromBitString(strval, maxBits=null, onErr_cutLSD=true) {
-    if (!strval) return this.fromNull();
-    this.bits = strval.length
-    if (maxBits && this.bits>maxBits)
-       if (onErr_cutLSD) strval = strval.slice(0,this.bits)
-       else throw new Error(`ERR4. Bit-length ${this.bits} exceeded the limit ${maxBits}`);
+    if (!strval)
+        return this.fromNull();
+    let cutBits = this.setBits_byMax(maxBits, strval.length, onErr_cutLSD)
+    if (cutBits[0]) strval = strval.slice(0,cutBits[1]);
     this.val = BigInt("0b"+strval)
     return this
   }
@@ -435,7 +459,8 @@ class SizedBigInt {
    * Input from string.
    * @param {string} strval -  with valid representation for radix.
    * @param {integer} radix - the representation adopted in strval, a label of SizedBigInt.kx_baseLabel.
-   * @param maxBits - null or maximal number of bits.
+   * @param {integer} maxBits - positive to enforce length; 0 to preserve input length; negative to express only maximum length.
+   * @param onErr_cutLSD {Boolean} - flag to not throw error, only truncates LSD of binary representation.
    * @return - new or redefined SizedBigInt.
    */
   fromString(strval, radix=4, maxBits=null, onErr_cutLSD=true) {
@@ -443,49 +468,49 @@ class SizedBigInt {
     let r = SizedBigInt.baseLabel(radix,false)
     if (!strval) return this.fromNull()
     if (r.base==2)
-      return this.fromBitString(strval,maxBits,onErr_cutLSD);
-    // else if (r.label='16js') _fromHexString(), to optimize.
+      return this.fromBitString(strval, maxBits, onErr_cutLSD);
+    else if (r.label='16js') // ON TESTING!
+      return this.fromHexString(strval, maxBits, onErr_cutLSD) // to optimize.
     let trLabel = r.label+'-to-2'
     if (!SizedBigInt.kx_tr[trLabel]) SizedBigInt.kx_trConfig(r.label);
     let tr = SizedBigInt.kx_tr[trLabel]
     let strbin = ''
     for (let i=0; i<strval.length; i++)
       strbin += tr[ strval.charAt(i) ]
-    return this.fromBitString(strbin,maxBits,onErr_cutLSD)
+    return this.fromBitString(strbin, maxBits, onErr_cutLSD)
   }
 
   /**
-   * Input from BigInt or integer part of a Number.
-   * @param val - Number or BigInt.
-   * @param {integer} maxBits - optional, the bit-length of val, to padding zeros.
-   * @param {boolean} onErr_cutLSD - flag to bypass error cuting the LSDs (least significant digits).
+   * Input from BigInt, SizedBigInt or Number.
+   * @param val - input value, any type, BigInt, SizedBigInt or Number.
+   * @param {integer} maxBits - positive to enforce length; 0 to preserve input length; negative to express only maximum length.
+   * @param onErr_cutLSD {Boolean} - flag to not throw error, only truncates LSD of binary representation.
    * @return - new or redefined SizedBigInt.
    */
-  fromInt(val, maxBits=0, onErr_cutLSD=true) { //old bits=0, maxBits=null
+  fromInt(val, maxBits=0, onErr_cutLSD=true) {
     let t = typeof val
-    maxBits = maxBits? Math.ceil(maxBits): 0 // must be int (for example decimal base use 3.8 bits so it is 4)
     let isNum = (t=='number')
+    let isSBI = (t=='object')
     if (t == 'bigint' || isNum) {
       if (isNum) this.val = BigInt( val>>>0 ); // unsigned  int
-      else this.val = val; // supposed positive
-      let l = this.val.toString(2).length  // no optimization as https://stackoverflow.com/q/54758130/287948
-      this.bits = (maxBits<=0)? l: maxBits
-      if (l>this.bits) {
-        if (onErr_cutLSD) this.val = this.val >> BigInt(l-this.bits);
-        else throw new Error(`ERR3. Invalid input value (lenght=${l}), bigger than input bit-length (predefined ${this.bits})`);
-      }
+      else this.val = isSBI? val.val: val; // supposed positive
+      let len = isSBI? val.bits: this.val.toString(2).length  // no optimization as https://stackoverflow.com/q/54758130/287948
+      let cutBits = this.setBits_byMax(maxBits, len, onErr_cutLSD)
+      if (cutBits[0]) this.val = this.val >> BigInt(len-this.bits); // need to test!
       return this
     } else // null, undefined, string, etc.
       return this.fromNull()
   }
 
-  _fromHexString(strval, maxBits=null) {
-    // not in use, for check performance optimizations
+
+  fromHexString(strval, maxBits=0, onErr_cutLSD=true) {
+    // developing for check performance optimizations, valid only for standard Hexadecimals
     if (!strval) return this.fromNull()
-    this.bits = strval.length*4
-    this.val = BigInt("0x"+strval) // works with asUintN(maxBits)?
-    return this
+    let len = strval.length*4
+    let val = BigInt("0x"+strval) // works with asUintN(maxBits)?
+    return this.fromInt({val:val,bits:len}, maxBits, onErr_cutLSD)
   }
+
 
   // // //
   // Getters and output methods:
