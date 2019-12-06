@@ -163,7 +163,7 @@ class GridOfCurve_D3 extends GridOfCurve {
         if (this.box_width< conf_canvasWidth_min) {
             let perc = Math.round( 100*(conf_canvasWidth_min-this.box_width)/conf_canvasWidth_min )
             let msg = `This visualization not works with small screens.\nPlease use a screen ${perc}% bigger.`
-            if (conf_alertLevel>1) alert(msg); else console.log(msg);
+            if (GSfc4q.conf_alertLevel>1) alert(msg); else console.log(msg);
         }
         let theChart = '#'+ this.domRef_id +' svg.theChart';
         this.D3_svg0 = d3.select(theChart).attr("width", this.box_width+10).attr("height", this.box_width+10)
@@ -235,7 +235,7 @@ class GridOfCurve_D3 extends GridOfCurve {
   }
 
   build(firstBuild=true, line_width=2) { //  draw grid!
-    if (conf_alertLevel>1) console.log("debug build:",this.sfc4.curveName);
+    if (GSfc4q.conf_alertLevel>1) console.log("debug build:",this.sfc4.curveName);
     this.buildSvg(firstBuild)
     const myThis = this
     let rw = this.cell_refWidth

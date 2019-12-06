@@ -1,6 +1,10 @@
-// node  --experimental-modules bench01.js
+// To execute on terminal:
+//   node  --experimental-modules tests/bench01.js > t01.txt
+//   diff t01.txt tests/bench01.txt
 
-const { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert } = require('../src/GSfc4q.js');
+const { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert, GSfc4q } = require('../src/GSfc4q.js');
+
+GSfc4q.conf_alertLevel=1
 
 var mrt, hlb;
 for (let l=0.5; l<3;  l=l+0.5) {

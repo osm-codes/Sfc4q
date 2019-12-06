@@ -127,7 +127,11 @@ class GSfc4q {
 
 } // \GSfc4qLbl
 
+GSfc4q.conf_alertLevel=0 // static global variable for config
 
+// // // // // //
+
+ 
 /**
  * Labeled GSfc4q. Uses a SizeBigInt to express GSfc4q keys as human-readable hierarchical codes.
  * Also extends internal representation to unically identify keys of multiple grids, concatenating the ID0 of the grid.
@@ -145,7 +149,7 @@ class GSfc4qLbl extends GSfc4q {
   constructor(level,base,id0,id0_maxBits) {
     super(level)
     this.base = null
-    this.sbiID = new SizedBigInt()
+    this.sbiID = new SizedBigInt()  //  val,radix,maxBits,onErr_cutLSD
     this.lblRefresh(base,id0,id0_maxBits)
   }
 
@@ -155,47 +159,56 @@ class GSfc4qLbl extends GSfc4q {
       use1? this.debugStates(): null 
     )
   }
+
+  /**
+   * Suposing id0 a BigInt and id0_maxBits standard maxBits parameter.
+   */
   lblRefresh(base,id0,id0_maxBits) {
-    base = base  || this.base  || '4h'
-    id0_maxBits = id0_maxBits || this.id0_maxBits || null
-    if (id0!==undefined && id0!==null && BigInt(id0)!=this.id0) {
-        let id0_tmp = SizedBigInt(id0,null,id0_maxBits,true)
-        this.id0 = id0_tmp.val  // a BigInt
-        this.id0_maxBits = id0_maxBits? id0_maxBits: id0_tmp.bits
-        this.sbiID.fromNull()  // remove old value
+    if (this.id0_maxBits === undefined) this.id0_maxBits = null;
+    if (!id0_maxBits) id0_maxBits=this.id0_maxBits;
+    if (base || !this.base) {
+    	base = base  || '4h'
+        base = SizedBigInt.baseLabel(base,true)
+        if (base!=this.base) {
+          this.base = base
+          SizedBigInt.kx_trConfig(this.base) // for exotic bases
+        }
     }
-    if (this.id0_maxBits == undefined) this.id0_maxBits = null
-    if (base && base!=this.base) {
-        this.base = base
-        SizedBigInt.kx_trConfig(this.base) // for exotic bases
+    let id0_tmp = new SizedBigInt(id0,this.base,id0_maxBits,true)
+    if (id0!==undefined && id0!==null && id0!=this.id0) {
+        this.id0 = id0_tmp.val  // a BigInt
+        this.id0_maxBits = id0_tmp.bits
+        this.sbiID.fromNull()   // remove old value
     }
   }
 
   /**
    * Set ID by ID.
-   * @param {bigint} id - the cell ID. Int or BigInt.
+   * @param {any} id - the cell ID.
+UNDER CONSTRUCTION
    */
-  setId(id) {
+  setId(id,onErr_cutLSD=false) {
      let IDbits = this.keyBits + (this.id0_maxBits?this.id0_maxBits:0)
-     this.sbiID.fromInt(id,IDbits)
+     //need to separate key and id0 after SizedBigInt convertion.
+     this.sbiID.fromAny(id, this.base, IDbits, onErr_cutLSD)
      return this
   }
 
   /**
    * Set by key.
-   * @param {bigint} key.
+   * @param {any} key.
    */
-  setKey(key) {
-     this.sbiID.fromInt(key,this.keyBits)
+  setKey(key,onErr_cutLSD=true) {
+     this.sbiID.fromAny(key, this.base, this.keyBits, onErr_cutLSD)
      return this
   }
 
   /**
    * Set by bkey.
-   * @param {bigint} bkey.
+   * @param {any} bkey.
    */
-  setBkey(bkey) {
-     this.sbiID.fromInt(bkey,this.bkeyBits)
+  setBkey(bkey,onErr_cutLSD=true) {
+     this.sbiID.fromAny(bkey,this.base,this.bkeyBits,onErr_cutLSD)
      return this
   }
 
@@ -210,8 +223,9 @@ class GSfc4qLbl extends GSfc4q {
   }
 
   /**
-   * Set ID by key.
-   * @param {bigint} key - Int or BigInt.
+   * Set ID by key using this.id0.
+   * @param {any} key - any value to be set by setId() method.
+UNDEr CONSTRUCTiON
    */
   setID_byKey(key) {
      if (this.id0_maxBits) {
@@ -225,7 +239,7 @@ class GSfc4qLbl extends GSfc4q {
    * @param {int} i - array or Integer X coordinate (scan columns from left to right).
    * @param {int} j - Integer Y coordinate (scan lines from bottom to up).
    */
-  setBkey_byIJ(i,j) {
+  setBkey_byIJ(i,j=null) {
     if (typeof i == 'object') [i,j]=i;
     let max = Number(this.nRefRows)-1
     if (i>max || j>max) return this; // reliable but hidding bugs
@@ -235,7 +249,7 @@ class GSfc4qLbl extends GSfc4q {
 
   /**
    * Labelling. Assignment of human-readle and hierarchical label for a cell of the grid.
-   * ... CHECK BUG: not returning correct number of bits  (start-padding zeros)
+  ... CHECK BUG: not returning correct number of bits  (start-padding zeros)
    * Provides a standard base-encoded (String) representation of the (BigInt) cell identifier (ID).
    * The ID is obtained by setID chaining methods.
    * @param {string} otherbase - none (standard) or other base.
@@ -331,7 +345,7 @@ class GSfc4qLbl_Hilbert extends GSfc4qLbl { // Hilbert Curve.
     this.curveName='Hilbert'
     this.needSwap = true // need to implement ij_swapSides(), etc.
     this.halfIsOptimized = false
-    if (conf_alertLevel>1) console.log("warning: Hilbert needSwap not implemented.")
+    if (GSfc4q.conf_alertLevel>1) console.log("warning: Hilbert needSwap not implemented.")
   }
 
   bkey_decode(bkey) {
@@ -398,21 +412,7 @@ class SizedBigInt {
   /**  @constructor */
   constructor(val,radix,maxBits=null,onErr_cutLSD=true) {
     SizedBigInt.kx_RefreshDefaults(); // global cache once.
-    let t = typeof val;
-    if (val && t=='object') { // not-null object
-       if (val instanceof SizedBigInt)
-        [val,radix,maxBits]=[val.val,null,val.bits]; // clone()
-       else if (val instanceof Array)
-        [val,radix,maxBits]=val;
-       else ({val,radix,maxBits} = val);
-       t = typeof val
-    }
-    // set to default values when 0, null or undefined:
-    if (t=='string') {
-      if (!radix) radix = 4;// 16h as better default
-      this.fromString(val, radix, maxBits, onErr_cutLSD)
-    } else // bigint, number or null
-      this.fromInt(val, maxBits, onErr_cutLSD)
+    this.fromAny(val,radix,maxBits,onErr_cutLSD)
   }
 
 
@@ -437,6 +437,33 @@ class SizedBigInt {
           this.bits = forceBits; // will pad zeros on back toString().
     } else maxBits = 0
     return [cutByMax,maxBits]
+  }
+
+  /**
+   * Input from any data type (string, array, SizedBigInt object, number, or bigint.
+   * @param {any} val -  any valid consistent value.
+   * @param {integer} radix - the representation adopted in strval, a label of SizedBigInt.kx_baseLabel.
+   * @param {integer} maxBits - positive to enforce length; 0 to preserve input length; negative to express only maximum length.
+   * @param onErr_cutLSD {Boolean} - flag to not throw error, only truncates LSD of binary representation.
+   * @return - new or redefined SizedBigInt.
+   */
+  fromAny(val,radix=null,maxBits=null,onErr_cutLSD=true) {
+    let t = typeof val
+    if (val && t=='object') { // not-null object
+       if (val instanceof SizedBigInt)
+         [val,radix,maxBits]=[val.val,null,val.bits]; // clone()
+       else if (val instanceof Array)
+         [val,radix,maxBits]=val;
+       else
+         ({val,radix,maxBits} = val);
+       t = typeof val
+    }
+    if (t=='string') {
+      if (!radix) radix = 4;// 16h as better default
+      this.fromString(val, radix, maxBits, onErr_cutLSD)
+    } else // bigint, number or null
+      this.fromInt(val, maxBits, onErr_cutLSD);
+    return this
   }
 
   /**
@@ -767,9 +794,9 @@ class SizedBigInt {
 
 // // // // // //
 // for Node:
-//module.exports = { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert, SizedBigInt }
-//var conf_alertLevel=0
-
+if (typeof window === 'undefined') { // suppose it is not a browser
+  module.exports = { GSfc4qLbl_Morton, GSfc4qLbl_Hilbert, SizedBigInt, GSfc4q }
+} // see also https://gist.github.com/rhysburnie/498bfd98f24b7daf5fd5930c7f3c1b7b
 
 
  /* - - - - - - - - - - - - - - - - - - - - - - - -
