@@ -1,3 +1,7 @@
+
+[![DOI](https://zenodo.org/badge/212991020.svg)](https://zenodo.org/badge/latestdoi/212991020)
+
+
 &nbsp; &nbsp; &nbsp; &nbsp; ([click here to online demonstration](https://ppkrauss.github.io/Sfc4q/) for Desktop Firefox or Chrome)
 
 # Sfc4q classes
