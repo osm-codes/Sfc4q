@@ -206,7 +206,6 @@ class GridOfCurve_D3 extends GridOfCurve {
     const ck  = this.lblChk
     const rw0 = this.cell_refWidth
     const rh0 = this.cell_refHeight
-    if ()
     const l32type = (this.layout.labelGeo_nvu || !this.layout.labelGeo)? '32nvu': '32ghs';
     const mySfc = this.sfc4
     var r = [].fill(null,0,this.num_nBKeys-1)  // será revisto e oTheFly!
@@ -343,7 +342,7 @@ class GridOfCurve_D3 extends GridOfCurve {
     let id = this.sfc4.sbiID.val // number
     let id4  = this.sfc4.id_toString('4h')
     let id16 = this.sfc4.id_toString('16h')
-    const l32type = this.layout.labelGeo? '32ghs': '32nvu';
+    const l32type = (this.layout.labelGeo_nvu || !this.layout.labelGeo)? '32nvu': '32ghs';
     let id32 = this.sfc4.id_toString(l32type)
     let idPub     = lck[0]? id: lck[1]? id32: lck[2]? id16: id4;
     let hex = (!lck[0] && !lck[1] && lck[2])?
