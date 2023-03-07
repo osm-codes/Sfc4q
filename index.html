@@ -100,12 +100,15 @@ function changeLblBase(base) {
   let level = mrtGrid.sfc4.level
   let isGhs = false;
   if (base=='ghs') {isGhs = true; base='32'}
+  if (base=='nvu') {base='32'}
   if (base=='32' && (level%2.5)) {
     alert("Base32 can be used\nonly on levels 2.5, 5, 10, etc.")
     return false;
   }
   mrtGrid.layout.labelGeo=isGhs
   hlbGrid.layout.labelGeo=isGhs
+  mrtGrid.layout.labelGeo_nvu=!isGhs
+  hlbGrid.layout.labelGeo_nvu=!isGhs
   mrtGrid.lblBase=base
   hlbGrid.lblBase=base
   changeLayout(level) //  refresh all
@@ -208,7 +211,7 @@ Hierarchical <b>level</b> <i>L</i> of <span style="color:red">grid</span> refine
   <option value="dec">Decimal</option>
   <option value="16">base 16h</option>
   <option value="ghs">base 32ghs</option>
-  <option value="32">base 32nvu</option>
+  <option value="nvu">base 32nvu</option>
 </select>
 
 <br/>&nbsp;<br/>

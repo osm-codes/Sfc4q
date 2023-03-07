@@ -154,6 +154,8 @@ class GridOfCurve_D3 extends GridOfCurve {
     this.layout.labelMain = this.layout.labelMain && rw>20
     this.layout.labelIJ   = this.layout.labelIJ   && rw>35
     this.layout.labelGeo  = true;
+    this.layout.labelGeo_nvu  = true; //GAMBI
+
   }
 
   buildSvg(firstBuild=true) {
@@ -204,7 +206,8 @@ class GridOfCurve_D3 extends GridOfCurve {
     const ck  = this.lblChk
     const rw0 = this.cell_refWidth
     const rh0 = this.cell_refHeight
-    const l32type = this.layout.labelGeo? '32ghs': '32nvu';
+    if ()
+    const l32type = (this.layout.labelGeo_nvu || !this.layout.labelGeo)? '32nvu': '32ghs';
     const mySfc = this.sfc4
     var r = [].fill(null,0,this.num_nBKeys-1)  // será revisto e oTheFly!
     for(let id=0; id<maxIdLoop; id++) {
