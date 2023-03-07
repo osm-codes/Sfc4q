@@ -2,7 +2,7 @@
 [![DOI](https://zenodo.org/badge/212991020.svg)](https://zenodo.org/badge/latestdoi/212991020)
 
 
-&nbsp; &nbsp; &nbsp; &nbsp; ([click here to online demonstration](https://ppkrauss.github.io/Sfc4q/) for Desktop Firefox or Chrome)
+&nbsp; &nbsp; &nbsp; &nbsp; ([click here to online demonstration](https://osm-codes.github.io/Sfc4q/) for Desktop Firefox or Chrome)
 
 # Sfc4q classes
 
@@ -28,13 +28,13 @@ Other important issue for SFC-4q is the generalization for "half levels" describ
 
 * [**GSfc4q**](https://ppkrauss.github.io/Sfc4q/docs/jsDocs/GSfc4q.html): the "Generalized Sfc4q" class.
 
-* [**GSfc4qLbl**](https://ppkrauss.github.io/Sfc4q/docs/jsDocs/GSfc4qLbl.html): a generaliation of GSfc4q,  to translate *key*, *bkey* and cell identifiers (cell IDs) into human-readable labels (lbl). To preserve hierarchy, this translation uses the concept of [Natural Codes](http://osm.codes/_foundations/art1.pdf), implemented in Javascript by the class SizedBigInt.
+* [**GSfc4qLbl**](https://ppkrauss.github.io/Sfc4q/docs/jsDocs/GSfc4qLbl.html): a generaliation of GSfc4q,  to translate *key*, *bkey* and cell identifiers (cell IDs) into human-readable labels (lbl). To preserve hierarchy, this translation uses the concept of [Natural Codes](http://osm.codes/_foundations/art1.pdf), implemented in Javascript by the class SizedBigInt (of the project [osm-codes/NaturalCodes](https://github.com/osm-codes/NaturalCodes) and old [SizedBigInt](https://github.com/ppKrauss/SizedBigInt)).
 
 * **GSfc4qLbl_Hilbert**: the "concrete class" that implements the [Hilbert curve](https://en.wikipedia.org/wiki/Hilbert_curve).
 
 * **GSfc4qLbl_Morton**:the "concrete class" that implements the [Morton curve](https://en.wikipedia.org/wiki/Z-order_curve) (also  Z-order curve).
 
-* [**SizedBigInt**](https://ppkrauss.github.io/Sfc4q/docs/jsDocs/SizedBigInt.html): it is a complementar tool for use BigInt (mainly 64 bits unsigned integers) as hierarchical indexes and obtain its string representations, and an implementation of the Natural Codes.
+* [**SizedBigInt**](https://github.com/osm-codes/NaturalCodes): it is a complementar tool for use BigInt (mainly 64 bits unsigned integers) as hierarchical indexes and obtain its string representations, and an implementation of the Natural Codes.
 
 See [classes documentation](https://ppkrauss.github.io/Sfc4q/docs/jsDocs).
 
@@ -49,4 +49,3 @@ See [classes documentation](https://ppkrauss.github.io/Sfc4q/docs/jsDocs).
 Content, data and algorithms: **CC0 1.0**,  Public Domain Dedication.
 
 [![License: CC0](https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/CC0_button.svg/88px-CC0_button.svg.png)](http://creativecommons.org/publicdomain/zero/1.0)
-

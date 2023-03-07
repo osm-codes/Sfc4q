@@ -131,7 +131,7 @@ GSfc4q.conf_alertLevel=0 // static global variable for config
 
 // // // // // //
 
- 
+
 /**
  * Labeled GSfc4q. Uses a SizeBigInt to express GSfc4q keys as human-readable hierarchical codes.
  * Also extends internal representation to unically identify keys of multiple grids, concatenating the ID0 of the grid.
@@ -155,8 +155,8 @@ class GSfc4qLbl extends GSfc4q {
 
   debugStates2(use1=true) {
     return Object.assign(
-      {base:this.base, sbiID:this.sbiID, id0:this.id0, id0_maxBits:this.id0_maxBits}, 
-      use1? this.debugStates(): null 
+      {base:this.base, sbiID:this.sbiID, id0:this.id0, id0_maxBits:this.id0_maxBits},
+      use1? this.debugStates(): null
     )
   }
 
@@ -649,28 +649,28 @@ class SizedBigInt {
          base:2, alphabet:"01",
          isDefault:true,
          isHierar:true, // use leading zeros (0!=00).
-         ref:"SizedNaturals"
+         ref:"NatCodes"
        }
        ,"4h": {
          base:4,
          isHierar:true, // use hDigit and leading zeros.
-         alphabet:"0123GH", case:"upper",
-         regex:'^([0123]*)([GH])?$',
-         ref:"SizedNaturals"
+         alphabet:"0123GQ", case:"upper", // 2*4-2=6 characters
+         regex:'^([0123]*)([GQ])?$',
+         ref:"NatCodes"
          }
        ,"8h": {
          base:8,
          isHierar:true, // letters are non-hierarchical
-         alphabet:"01234567GHJKLM",  // 2*8-2=14 characters
-         regex:'^([0-7]*)([GHJ-M])?$',
-         ref:"SizedNaturals"
+         alphabet:"01234567GHMQRV",  // 2*8-2=14 characters
+         regex:'^([0-7]*)([GHMQRV])?$',
+         ref:"NatCodes"
        }
        ,"16h": {
          base:16,
-         isHierar:true,  // upper case are the non-hierarchical 
-         alphabet:"0123456789abcdefGHJKLMNPQRSTVZ", //2*16-2=30 characters
-         regex:'^([0-9a-f]*)([GHJ-NP-TVZ])?$',
-         ref:"SizedNaturals"
+         isHierar:true,  // upper case are the non-hierarchical
+         alphabet:"0123456789abcdefGHJKMNPQRSTVZY", // 2*16-2=30 characters
+         regex:'^([0-9a-f]*)([GHJKMNPQRSTVZY])?$',
+         ref:"NatCodes"
        }
        ,"4js":   { alphabet:"0123", isDefault:true, ref:"ECMA-262" }
        ,"8js":   { alphabet:"01234567", isDefault:true, ref:"ECMA-262" }
@@ -729,19 +729,29 @@ class SizedBigInt {
     if (r.base>64) throw new Error(`Base-${r.base} is invalid`);
     let label = r.label + '-to-2'
     if (!SizedBigInt.kx_tr[label]) SizedBigInt.kx_tr[label] = {};
+    // is valid for r.isHierar, to reproduce standard number
     for (let i=0; i<r.base; i++) { // scans alphabet
         let c = r.alphabet.charAt(i)
         SizedBigInt.kx_tr[label][c] = i.toString(2).padStart(r.bitsPerDigit,'0')
     }
     if (r.isHierar) {
-      let alphaPos = r.base;
-      for(var bits=1; bits<r.bitsPerDigit; bits++)
-        for (let i=0; i<2**bits; i++) {
-          let c = r.alphabet.charAt(alphaPos)
-          SizedBigInt.kx_tr[label][c] = i.toString(2).padStart(bits,'0')
-          alphaPos++
-        } // \for i, \for bits
-    }
+      var ordList = (r.base==4)? ['0','1']
+            : (r.base==8)? ['0','00','01','1','10','11']
+            : ['0','00','000','001','01','010','011', '1','10','100','101','11','110','111'];
+      for (var i=0; i<ordList.length; i++) {
+        let c = r.alphabet.charAt(r.base+i)
+        SizedBigInt.kx_tr[label][c] = ordList[i]
+      }
+      /* old baseH sequence:
+        let alphaPos = r.base;
+        for(var bits=1; bits<r.bitsPerDigit; bits++)
+          for (let i=0; i<2**bits; i++) {
+            let c = r.alphabet.charAt(alphaPos)
+            SizedBigInt.kx_tr[label][c] = i.toString(2).padStart(bits,'0')
+            alphaPos++
+          } // \for i, \for bits
+      */
+    } // \isHierar
     SizedBigInt.kx_tr['2-to-'+r.label] = SizedBigInt.objSwap(SizedBigInt.kx_tr[label]);
   } // \kx_trConfig
 
